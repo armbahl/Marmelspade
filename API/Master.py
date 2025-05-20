@@ -18,7 +18,7 @@ RESO_URL = "https://api.resonite.com"
 TOKEN_PATH = "AUTH_TOKEN.json"
 
 ##############################################
-### (SECT_1) LOGIN CHECKS AND LOGIC
+### (SECT_1) LOGIN CHECKS AND VARIABLES
 ##############################################
 
 ### Token age check ###
@@ -86,9 +86,9 @@ def ResoLogin():
     loopCheck = True
     while loopCheck == True:
         username = input("\x1B[HUsername: ")
-        password = input("Password: ")
+        password = getpass.getpass(prompt="Password: ")
         headerUID = secrets.token_hex(32)
-        headerTOTP = input("2FA (leave blank if not using): ")
+        headerTOTP = getpass.getpass(prompt="2FA (leave blank if not using): ")
 
         pHeaders = {"UID": headerUID, "TOTP": headerTOTP}
         pLogin = {"username": username,
@@ -117,6 +117,7 @@ def ResoLogin():
                 case "N":
                     loopCheck = False
                     return loopCheck
+                    
                 case _:
                     print("\x1B[H\x1B[J")
                     loopCheck = True
@@ -147,9 +148,10 @@ def ResoLogout():
         return False
 
 ##############################################
-### (SECT_3) ACTIONS
+### (SECT_3) INVENTORY FUNCTIONS
 ##############################################
 
+### Parses directory path from link type ###
 def LinkDirectory(aUri):
     removedResRec = aUri[10:]
     sliceIndex = removedResRec.find("/")
@@ -158,43 +160,45 @@ def LinkDirectory(aUri):
 
     gReq = requests.get(f"https://api.resonite.com/users/{ownerID}/records/{uriID}").json()
 
-    return gReq["path"]
+    return [gReq["ownerId"], gReq["path"]]
 
-
-def InventoryDump():
-    # userActual = input("Input owner's user ID (NOT USERNAME): ")
-    # pathStart = "Inventory\\"
-    # pathInp = input("Input starting folder path (CASE SENSITIVE): ")
-    # pathActual = pathlib.PureWindowsPath(pathInp)
-
-    userActual = "U-TEST"
-    groupAcutal = "G-TEST"
-    pathInp = "Inventory/TEST"
-    pathActual = pathlib.PureWindowsPath(pathInp)
-    dirName = pathlib.PureWindowsPath(pathInp).stem
-    
-    gSubDirs = []
-
-    gReq = requests.get(f"{RESO_URL}/users/{userActual}/records", \
-                          headers = authHeaders, \
-                          params={"path": pathActual}).json()
-    gLength = len(gReq)
-
+### Writes raw data to named files ###
+def WriteFiles(gReq, dirName, gSubDirs, gSubLinks):
     with open(DUMP_PATH + 'FULL_' + dirName + '.json', 'w') as f:
         f.write(json.dumps(gReq, indent=4))
-
-    counter = 0
-    for x in range(gLength):
-        if gReq[x]["recordType"] == "directory" and (gReq[x]["ownerId"] == (userActual or groupAcutal)):
-            gSubDirs.append(gReq[x]["path"] + "\\" + gReq[x]["name"])
-
-        elif gReq[x]["recordType"] == "link" and (gReq[x]["ownerId"] == (userActual or groupAcutal)):
-            counter += 1
-            print(f"Links converted: {counter}")
-            gSubDirs.append(LinkDirectory(gReq[x]["assetUri"]) + "\\" + gReq[x]["name"])
-            print("\x1B[1A\x1B[2K", end="")
 
     with open(DUMP_PATH + 'DIRS_' + dirName + '.txt', 'w') as f:
         daLength = len(gSubDirs)
         for x in range(daLength):
-            f.write(gSubDirs[x] + "\n")
+            f.write(str(gSubDirs[x]) + "\n")
+
+    with open(DUMP_PATH + 'LINK-DIRS_' + dirName + '.txt', 'w') as f:
+        daLength = len(gSubLinks)
+        for x in range(daLength):
+            z = LinkDirectory(gSubLinks[x])
+            f.write(z[0] + '\\' + z[1] + '\n')
+
+def InventoryDump():
+    userActual = input("Input owner's user ID (CASE SENSITIVE): ")
+    groupActual = input("Input group ID, if any (CASE SENSITIVE): ")
+    pathInp = "Inventory/" + input("Input starting folder path (CASE SENSITIVE): ")
+    pathActual = pathlib.PureWindowsPath(pathInp)
+    
+    gSubDirs = [pathActual]
+    gSubLinks = []
+    
+    for a in range(2):
+        dirName = pathlib.PureWindowsPath(gSubDirs[a]).stem
+        gReq = requests.get(f"{RESO_URL}/users/{userActual}/records", \
+                            headers = authHeaders, \
+                            params={"path": gSubDirs[a]}).json()
+        gLength = len(gReq)
+
+        for x in range(gLength):
+            if gReq[x]["recordType"] == "directory":
+                gSubDirs.append(gReq[x]["path"] + "\\" + gReq[x]["name"])
+
+            elif gReq[x]["recordType"] == "link":
+                gSubLinks.append(gReq[x]["assetUri"])
+
+        WriteFiles(gReq, dirName, gSubDirs, gSubLinks)
