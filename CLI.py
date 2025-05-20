@@ -15,8 +15,8 @@ def MenuSelect(menuOpt):
             "Please select an option:\n\n" +\
                 
             "1) Pull Inventory\n" +\
-            "8) Logout\n" +\
-            "99) EXIT\n")
+            "9) Exit\n" +\
+            "99) LOGOUT\n")
 
         usrInp = int(input("<SELECTION>: "))
 
