@@ -153,52 +153,50 @@ def ResoLogout():
 
 ### Parses directory path from link type ###
 def LinkDirectory(aUri):
-    removedResRec = aUri[10:]
-    sliceIndex = removedResRec.find("/")
-    ownerID = removedResRec[:(sliceIndex)]
-    uriID = removedResRec[(sliceIndex + 1):]
+    removedResRec = aUri[10:] # Removes "resrec:///"
+    sliceIndex = removedResRec.find("/") # Finds first forward slash 
+    ownerID = removedResRec[:(sliceIndex)] # Loads username
+    uriID = removedResRec[(sliceIndex + 1):] # Loads URI
 
-    gReq = requests.get(f"https://api.resonite.com/users/{ownerID}/records/{uriID}").json()
+    gReq = requests.get(f"https://api.resonite.com/users/{ownerID}/records/{uriID}").json() # Gets link JSON
 
-    return [gReq["ownerId"], gReq["path"]]
+    return [gReq["ownerId"], gReq["path"]] # Returns the user ID and path within their inventory
 
-### Writes raw data to named files ###
-def WriteFiles(gReq, dirName, gSubDirs, gSubLinks):
-    with open(DUMP_PATH + 'FULL_' + dirName + '.json', 'w') as f:
-        f.write(json.dumps(gReq, indent=4))
-
-    with open(DUMP_PATH + 'DIRS_' + dirName + '.txt', 'w') as f:
-        daLength = len(gSubDirs)
-        for x in range(daLength):
-            f.write(str(gSubDirs[x]) + "\n")
-
-    with open(DUMP_PATH + 'LINK-DIRS_' + dirName + '.txt', 'w') as f:
-        daLength = len(gSubLinks)
-        for x in range(daLength):
-            z = LinkDirectory(gSubLinks[x])
-            f.write(z[0] + '\\' + z[1] + '\n')
-
+### Dumps the inventory starting from the user provided directory ###
 def InventoryDump():
-    userActual = input("Input owner's user ID (CASE SENSITIVE): ")
-    groupActual = input("Input group ID, if any (CASE SENSITIVE): ")
-    pathInp = "Inventory/" + input("Input starting folder path (CASE SENSITIVE): ")
-    pathActual = pathlib.PureWindowsPath(pathInp)
+    userActual = input("Input owner's user ID (CASE SENSITIVE): ") # Input of owner's ID
+    pathInp = "Inventory/" + input("Input starting folder path (CASE SENSITIVE): ") # Input of starting directory
+    pathActual = pathlib.PureWindowsPath(pathInp) # Initial directory formatting
     
-    gSubDirs = [pathActual]
-    gSubLinks = []
-    
-    for a in range(2):
-        dirName = pathlib.PureWindowsPath(gSubDirs[a]).stem
+    gDirs = [pathActual] # List for directories
+    gSubLinks = [] # List for links
+
+    loopCatch = 0
+    loopMax = 2
+    while loopCatch < loopMax:
+        dirName = pathlib.PureWindowsPath(gDirs[loopCatch]).stem # Loads current directory name
+
         gReq = requests.get(f"{RESO_URL}/users/{userActual}/records", \
                             headers = authHeaders, \
-                            params={"path": gSubDirs[a]}).json()
-        gLength = len(gReq)
+                            params={"path": gDirs[loopCatch]}).json() # Gets directory JSON from API
+
+        with open(f"{DUMP_PATH}\\INV_{dirName}.json", 'w') as f: # Writes JSON to file
+            f.write(json.dumps(gReq, indent=4))
+
+        gLength = len(gReq) # Counts items within JSON
 
         for x in range(gLength):
-            if gReq[x]["recordType"] == "directory":
-                gSubDirs.append(gReq[x]["path"] + "\\" + gReq[x]["name"])
+            if gReq[x]["recordType"] == "directory": # Checks if the entry is a directory
+                print(gReq[x]["path"] + "\\" + gReq[x]["name"]) # Prints directory to console
+                gDirs.append(gReq[x]["path"] + "\\" + gReq[x]["name"]) # Adds directory to list
 
-            elif gReq[x]["recordType"] == "link":
-                gSubLinks.append(gReq[x]["assetUri"])
+            elif gReq[x]["recordType"] == "link": # Checks if the entry is a public folder
+                gSubLinks.append(gReq[x]["assetUri"]) #---------- TO DO ----------#
 
-        WriteFiles(gReq, dirName, gSubDirs, gSubLinks)
+        loopMax = len(gDirs) # Dynamically resizes based on how many items are in the directory list
+        loopCatch += 1 # Increment for loop iteration
+    
+    #-- DEBUG: Writes directories to single file --#
+    # with open(f"{DUMP_PATH}\\_DIRS.txt", 'w') as f:
+    #     for x in range(len(gDirs)):
+    #         f.write(f"{RESO_URL}/users/{userActual}/records/{gDirs[x]}\n")

@@ -9,10 +9,9 @@ import API.Master as API
 ### Main menu ###
 def MenuSelect(menuOpt):
     ClrScr()
-
+    print("Welcome to Marmelspade!\n")
     while menuOpt == True:
-        print("Welcome to Marmelspade!\n" +\
-            "Please select an option:\n\n" +\
+        print("Please select an option:\n\n" +\
                 
             "1) Pull Inventory\n" +\
             "9) Exit\n" +\
@@ -24,6 +23,7 @@ def MenuSelect(menuOpt):
             case 1: # Dump the inventory into raw files
                 API.InventoryDump()
                 ClrScr()
+                print("Pulled Inventory!")
 
             case 9: # Exit the program
                 menuOpt = False
