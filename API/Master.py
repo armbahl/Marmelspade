@@ -7,13 +7,14 @@ import pprint
 import requests
 import time
 import secrets
+import sqlite3
 from Utils import ClrScr
 
 ##############################################
 ### (SECT_0) CONSTANTS
 ##############################################
 
-DUMP_PATH = "DEBUG\\"
+DUMP_PATH = "_JSON\\"
 RESO_URL = "https://api.resonite.com"
 TOKEN_PATH = "AUTH_TOKEN.json"
 
@@ -164,6 +165,11 @@ def LinkDirectory(aUri):
 
 ### Dumps the inventory starting from the user provided directory ###
 def InventoryDump():
+    if os.path.isdir("_JSON"):
+        pass
+    else:
+        os.mkdir("_JSON")
+
     userActual = input("Input owner's user ID (CASE SENSITIVE): ") # Input of owner's ID
     pathInp = "Inventory/" + input("Input starting folder path (CASE SENSITIVE): ") # Input of starting directory
     pathActual = pathlib.PureWindowsPath(pathInp) # Initial directory formatting
@@ -171,14 +177,12 @@ def InventoryDump():
     gDirs = [pathActual] # List for directories
     gSubLinks = [] # List for links
 
-    loopCatch = 0
-    loopMax = 2
-    while loopCatch < loopMax:
-        dirName = pathlib.PureWindowsPath(gDirs[loopCatch]).stem # Loads current directory name
+    while gDirs: # Loops until all directories have been written
+        dirName = pathlib.PureWindowsPath(gDirs[0]).stem # Loads current directory name
 
         gReq = requests.get(f"{RESO_URL}/users/{userActual}/records", \
                             headers = authHeaders, \
-                            params={"path": gDirs[loopCatch]}).json() # Gets directory JSON from API
+                            params={"path": gDirs[0]}).json() # Gets directory JSON from API
 
         with open(f"{DUMP_PATH}\\INV_{dirName}.json", 'w') as f: # Writes JSON to file
             f.write(json.dumps(gReq, indent=4))
@@ -192,11 +196,72 @@ def InventoryDump():
 
             elif gReq[x]["recordType"] == "link": # Checks if the entry is a public folder
                 gSubLinks.append(gReq[x]["assetUri"]) #---------- TO DO ----------#
-
-        loopMax = len(gDirs) # Dynamically resizes based on how many items are in the directory list
-        loopCatch += 1 # Increment for loop iteration
+        
+        gDirs.pop(0) # Removes current directory from list and loads next one
     
     #-- DEBUG: Writes directories to single file --#
     # with open(f"{DUMP_PATH}\\_DIRS.txt", 'w') as f:
     #     for x in range(len(gDirs)):
     #         f.write(f"{RESO_URL}/users/{userActual}/records/{gDirs[x]}\n")
+
+##############################################
+### (SECT_4) DATABASE HANDLING
+##############################################
+def CreateDatabase():
+    if not os.path.isfile("DATABASE.db"):
+        with sqlite3.connect("DATABASE.db") as conn:
+                c = conn.cursor()
+
+                itemTable = """CREATE TABLE "Items" (
+                        "Name"	TEXT NOT NULL,
+                        "Link"	TEXT NOT NULL,
+                        "Tags"	TEXT NOT NULL,
+                        "Path"	TEXT NOT NULL
+                        ); """
+                c.execute(itemTable)
+
+                folderTable = """CREATE TABLE "Public Folders" (
+                        "Name"	TEXT NOT NULL,
+                        "Link"	TEXT NOT NULL,
+                        "Tags"	TEXT NOT NULL,
+                        "Path"	TEXT NOT NULL
+                        ); """
+                c.execute(folderTable)
+
+                worldTable = """CREATE TABLE "Worlds" (
+                        "Name"	TEXT NOT NULL,
+                        "Link"	TEXT NOT NULL,
+                        "Tags"	TEXT NOT NULL,
+                        "Path"	TEXT NOT NULL
+                        ); """
+                c.execute(worldTable)
+
+    with sqlite3.connect("DATABASE.db") as conn:
+        c = conn.cursor()
+
+        for x in os.listdir("_JSON"):
+            with open((f"_JSON\\{x}"), 'r') as f:
+                jsonDump = json.load(f)
+
+                for y in range(len(jsonDump)):
+                    
+                    if jsonDump[y]["recordType"] != "directory":
+                        dbName = jsonDump[y]["name"]
+                        dbLink = jsonDump[y]["assetUri"]
+                        dbTags = jsonDump[y]["tags"]
+                        dbPath = jsonDump[y]["path"]
+
+                        if jsonDump[y]["recordType"] == "object":
+                            addTo = f'INSERT INTO "Items" VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
+                            c.execute(addTo)
+                        
+                        elif jsonDump[y]["recordType"] == "link":
+                            addTo = f'INSERT INTO "Public Folders" VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
+                            c.execute(addTo)
+                        
+                        elif jsonDump[y]["recordType"] == "world":
+                            addTo = f'INSERT INTO "Worlds" VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
+                            c.execute(addTo)
+                        
+                        else:
+                            pass

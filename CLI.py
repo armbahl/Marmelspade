@@ -14,6 +14,7 @@ def MenuSelect(menuOpt):
         print("Please select an option:\n\n" +\
                 
             "1) Pull Inventory\n" +\
+            "2) Create Database\n"    +\
             "9) Exit\n" +\
             "99) LOGOUT\n")
 
@@ -23,7 +24,12 @@ def MenuSelect(menuOpt):
             case 1: # Dump the inventory into raw files
                 API.InventoryDump()
                 ClrScr()
-                print("Pulled Inventory!")
+                print("Pulled inventory!")
+            
+            case 2:
+                API.CreateDatabase()
+                ClrScr()
+                print("Database created!")
 
             case 9: # Exit the program
                 menuOpt = False
