@@ -14,7 +14,7 @@ from Utils import ClrScr
 ### (SECT_0) CONSTANTS
 ##############################################
 
-DUMP_PATH = "_JSON\\"
+DUMP_PATH = "_JSON"
 RESO_URL = "https://api.resonite.com"
 TOKEN_PATH = "AUTH_TOKEN.json"
 
@@ -170,7 +170,7 @@ def InventoryDump():
     else:
         os.mkdir("_JSON")
 
-    userActual = input("Input owner's user ID (CASE SENSITIVE): ") # Input of owner's ID
+    userActual = input("Input owner's user or group ID (CASE SENSITIVE): ") # Input of owner's ID
     pathInp = "Inventory/" + input("Input starting folder path (CASE SENSITIVE): ") # Input of starting directory
     pathActual = pathlib.PureWindowsPath(pathInp) # Initial directory formatting
     
@@ -184,7 +184,7 @@ def InventoryDump():
                             headers = authHeaders, \
                             params={"path": gDirs[0]}).json() # Gets directory JSON from API
 
-        with open(f"{DUMP_PATH}\\INV_{dirName}.json", 'w') as f: # Writes JSON to file
+        with open(f"{DUMP_PATH}/INV_{dirName}.json", 'w') as f: # Writes JSON to file
             f.write(json.dumps(gReq, indent=4))
 
         gLength = len(gReq) # Counts items within JSON
@@ -215,7 +215,6 @@ def CreateDatabase():
                 itemTable = """CREATE TABLE "Items" (
                         "Name"	TEXT NOT NULL,
                         "Link"	TEXT NOT NULL,
-                        "Tags"	TEXT NOT NULL,
                         "Path"	TEXT NOT NULL
                         ); """
                 c.execute(itemTable)
@@ -223,7 +222,6 @@ def CreateDatabase():
                 folderTable = """CREATE TABLE "Public Folders" (
                         "Name"	TEXT NOT NULL,
                         "Link"	TEXT NOT NULL,
-                        "Tags"	TEXT NOT NULL,
                         "Path"	TEXT NOT NULL
                         ); """
                 c.execute(folderTable)
@@ -231,7 +229,7 @@ def CreateDatabase():
                 worldTable = """CREATE TABLE "Worlds" (
                         "Name"	TEXT NOT NULL,
                         "Link"	TEXT NOT NULL,
-                        "Tags"	TEXT NOT NULL,
+                        "Tags"  TEXT NOT NULL,
                         "Path"	TEXT NOT NULL
                         ); """
                 c.execute(worldTable)
@@ -240,28 +238,41 @@ def CreateDatabase():
         c = conn.cursor()
 
         for x in os.listdir("_JSON"):
-            with open((f"_JSON\\{x}"), 'r') as f:
+            with open((f"_JSON/{x}"), 'r') as f:
                 jsonDump = json.load(f)
 
                 for y in range(len(jsonDump)):
-                    
-                    if jsonDump[y]["recordType"] != "directory":
-                        dbName = jsonDump[y]["name"]
-                        dbLink = jsonDump[y]["assetUri"]
-                        dbTags = jsonDump[y]["tags"]
-                        dbPath = jsonDump[y]["path"]
+                    dbTags = ""
 
-                        if jsonDump[y]["recordType"] == "object":
-                            addTo = f'INSERT INTO "Items" VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
-                            c.execute(addTo)
+                    if jsonDump[y]["recordType"] == "object":
+                        dbLink = "resrec:///"+ str(jsonDump[y]["id"])
+                        dbTable = "Items"
+
+                        for z in range(len(jsonDump[y]["tags"])):
+                            if jsonDump[y]["tags"][z][:9] != "world_url":
+                                dbTags += str(jsonDump[y]["tags"][z]) + " "
+
+                            if jsonDump[y]["tags"][z] == "world_orb":
+                                worldOrb = str(jsonDump[y]["tags"][z+1])[10:]
+                                dbLink = worldOrb
+                                dbTable = "Worlds"
                         
-                        elif jsonDump[y]["recordType"] == "link":
-                            addTo = f'INSERT INTO "Public Folders" VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
-                            c.execute(addTo)
+                        dbNameFIRST = str(jsonDump[y]["name"])
+                        dbName = dbNameFIRST.replace("\"","'")
+                        dbPath = jsonDump[y]["path"]
                         
-                        elif jsonDump[y]["recordType"] == "world":
-                            addTo = f'INSERT INTO "Worlds" VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
-                            c.execute(addTo)
-                        
+                        if dbTable == "Worlds":
+                            addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
                         else:
-                            pass
+                            addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbPath}")'
+                        c.execute(addTo)
+
+                    elif jsonDump[y]["recordType"] == "link":
+                        dbName = str(jsonDump[y]["name"])
+                        dbLink = "resrec:///"+ str(jsonDump[y]["id"])
+                        dbPath = jsonDump[y]["path"]
+                        addTo = f'INSERT INTO "Public Folders" VALUES ("{dbName}", "{dbLink}", "{dbPath}")'
+                        c.execute(addTo)
+                    
+                    else:
+                        pass
