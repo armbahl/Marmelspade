@@ -11,24 +11,31 @@ def MenuSelect(menuOpt):
     ClrScr()
     print("Welcome to Marmelspade!\n")
     while menuOpt == True:
-        print("Please select an option:\n\n" +\
+        print("Please select an option:\n\n"+\
                 
-            "1) Pull Inventory\n" +\
-            "2) Create Database\n"    +\
-            "9) Exit\n" +\
+            "1) Pull Inventory\n"+\
+            "2) Create Database\n"+\
+            "9) Exit\n"+\
             "99) LOGOUT\n")
 
         usrInp = int(input("<SELECTION>: "))
 
         match usrInp:
             case 1: # Dump the inventory into raw files
-                API.InventoryDump()
+                API.InventoryDump(0)
                 ClrScr()
                 print("Pulled inventory!")
-            
+
             case 2:
                 API.CreateDatabase()
                 ClrScr()
+                print("Database created!")
+
+            case 3:
+                API.InventoryDump(1)
+                ClrScr()
+                print("Pulled inventory!")
+                API.CreateDatabase()
                 print("Database created!")
 
             case 9: # Exit the program

@@ -8,6 +8,7 @@ import requests
 import time
 import secrets
 import sqlite3
+import sys
 from Utils import ClrScr
 
 ##############################################
@@ -15,6 +16,7 @@ from Utils import ClrScr
 ##############################################
 
 DUMP_PATH = "_JSON"
+ERROR_HANDLER = False
 RESO_URL = "https://api.resonite.com"
 TOKEN_PATH = "AUTH_TOKEN.json"
 
@@ -34,7 +36,7 @@ def ExpireCheck(expDays):
         else:
             return False
     else:
-        print("ERROR E101:\nEXPIRE NOT WORKING")
+        print("ERROR E101:\nEXPIRE CHECK ERROR")
 
 authUser = None
 authToken = None
@@ -42,41 +44,49 @@ authHeaders = None
 
 ### Token file existence check and reading ###
 def TokenFileCheck():
-    global authUser
-    global authToken
-    global authHeaders
+    try:
+        global authUser
+        global authToken
+        global authHeaders
 
-    if os.path.exists(TOKEN_PATH) == True:
-        with open(TOKEN_PATH) as f:
-            readFile = json.load(f) # Load json
-        authUser = readFile["entity"]["userId"] # User ID from json
-        authToken = readFile["entity"]["token"] # Token from json
-        authHeaders = {"Authorization": f"res {authUser}:{authToken}"} # Prep header
-        return True
-    
-    else:
-        return False
+        if os.path.exists(TOKEN_PATH) == True:
+            with open(TOKEN_PATH) as f:
+                readFile = json.load(f) # Load json
+            authUser = readFile["entity"]["userId"] # User ID from json
+            authToken = readFile["entity"]["token"] # Token from json
+            authHeaders = {"Authorization": f"res {authUser}:{authToken}"} # Prep header
+            return True
+        
+        else:
+            return False
+    except:
+        print("ERROR E102:\nTOKEN CHECK NOT WORKING")
+        sys.exit(0)
 
 def HashGen():
 ### Machine ID generation ###
-    z = secrets.token_hex(16) # Random number
-    x = 8 # Sring slicer offset
+    try:
+        z = secrets.token_hex(16) # Random number
+        x = 8 # Sring slicer offset
 
-    for y in range(4): # Adds dashes required for POST
-        match y:
-            case 0:
-                z = z[ :x] + "-" + z[x: ]
-            case 1:
-                y += 5
-                z = z[ :x] + "-" + z[x: ]
-            case 2:
-                y += 5
-                z = z[ :x] + "-" + z[x: ]
-            case 3:
-                y += 5
-                z = z[ :x] + "-" + z[x: ]
-    
-    return z # Returns machine ID string
+        for y in range(4): # Adds dashes required for POST
+            match y:
+                case 0:
+                    z = z[ :x] + "-" + z[x: ]
+                case 1:
+                    y += 5
+                    z = z[ :x] + "-" + z[x: ]
+                case 2:
+                    y += 5
+                    z = z[ :x] + "-" + z[x: ]
+                case 3:
+                    y += 5
+                    z = z[ :x] + "-" + z[x: ]
+        
+        return z # Returns machine ID string
+    except:
+        print("ERROR 103:\nMACHINE HASH NOT GENERATED")
+        sys.exit(0)
 
 ##############################################
 ### (SECT_2) LOGIN/LOGOUT HANDLING
@@ -84,131 +94,150 @@ def HashGen():
 
 ### Login handler ###
 def ResoLogin():
-    loopCheck = True
-    while loopCheck == True:
-        username = input("\x1B[HUsername: ")
-        password = getpass.getpass(prompt="Password: ")
-        headerUID = secrets.token_hex(32)
-        headerTOTP = getpass.getpass(prompt="2FA (leave blank if not using): ")
+    try:
+        loopCheck = True
+        while loopCheck == True:
+            username = input("\x1B[HUsername: ")
+            password = getpass.getpass(prompt="Password: ")
+            headerUID = secrets.token_hex(32)
+            headerTOTP = getpass.getpass(prompt="2FA (leave blank if not using): ")
 
-        pHeaders = {"UID": headerUID, "TOTP": headerTOTP}
-        pLogin = {"username": username,
-                "authentication": {"$type": "password", "password": password},
-                "secretMachineId": HashGen(),
-                "rememberMe": True
-        }
+            pHeaders = {"UID": headerUID, "TOTP": headerTOTP}
+            pLogin = {"username": username,
+                    "authentication": {"$type": "password", "password": password},
+                    "secretMachineId": HashGen(),
+                    "rememberMe": True
+            }
 
-        pReq = requests.post(f"{RESO_URL}/userSessions", \
-                               headers=pHeaders, \
-                               json=pLogin) # POST request
+            pReq = requests.post(f"{RESO_URL}/userSessions", \
+                                headers=pHeaders, \
+                                json=pLogin) # POST request
 
-        if pReq.status_code == 200: # Success
-            with open(TOKEN_PATH, "w") as f:
-                f.write(json.dumps(pReq.json(), indent=4))
+            if pReq.status_code == 200: # Success
+                with open(TOKEN_PATH, "w") as f:
+                    f.write(json.dumps(pReq.json(), indent=4))
 
-            loopCheck = False
-            return True
-            print("LOGGED IN")
+                loopCheck = False
+                return True
+                print("LOGGED IN")
 
-        elif pReq.status_code == 400: # Invalid username/password
-            logTryAgain = input("INCORRECT LOGIN INFO!\n" +\
-                                "Try again?\n" +\
-                                "(Y)/N: ")
-            match logTryAgain.upper():
-                case "N":
-                    loopCheck = False
-                    return loopCheck
-                    
-                case _:
-                    print("\x1B[H\x1B[J")
-                    loopCheck = True
+            elif pReq.status_code == 400: # Invalid username/password
+                logTryAgain = input("INCORRECT LOGIN INFO!\n" +\
+                                    "Try again?\n" +\
+                                    "(Y)/N: ")
+                match logTryAgain.upper():
+                    case "N":
+                        loopCheck = False
+                        return loopCheck
+                        
+                    case _:
+                        print("\x1B[H\x1B[J")
+                        loopCheck = True
 
-        else: # ERROR (A101)
-            print(pReq.status_code)
-            print(pReq.reason)
-            loopCheck == False
+            else: # ERROR (A101)
+                print(pReq.status_code)
+                print(pReq.reason)
+                loopCheck == False
+    except:
+        print("ERROR E104:\nLOGIN ERROR")
+        sys.exit(0)
 
 ### Logout handler ###
 def ResoLogout():
-    TokenFileCheck()
-    dPath = f"{RESO_URL}/userSessions/{authUser}/{authToken}" # Prep URL
+    try:
+        TokenFileCheck()
+        dPath = f"{RESO_URL}/userSessions/{authUser}/{authToken}" # Prep URL
 
-    dReq = requests.delete(dPath, headers=authHeaders) # DELETE request
+        dReq = requests.delete(dPath, headers=authHeaders) # DELETE request
 
-    if dReq.status_code == 200: # Success
-        print("LOGGED OUT")
-        os.remove(TOKEN_PATH)
-        return True
-    
-    elif dReq.status_code == 409: # Not logged in
-        print("ALREADY LOGGED OUT")
-        return False
+        if dReq.status_code == 200: # Success
+            print("LOGGED OUT")
+            os.remove(TOKEN_PATH)
+            return True
+        
+        elif dReq.status_code == 409: # Not logged in
+            print("ALREADY LOGGED OUT")
+            return False
 
-    else: # ERROR (B101)
-        print(f"ERROR B101:\n{dReq.status_code}\n{dReq.reason}")
-        return False
+        else: # ERROR (B101)
+            print(f"ERROR B101:\n{dReq.status_code}\n{dReq.reason}")
+            return False
+    except:
+        print("ERROR E105:\nLOGOUT ERROR")
+        sys.exit(0)
 
 ##############################################
 ### (SECT_3) INVENTORY FUNCTIONS
 ##############################################
 
+################ UNUSED ################
 ### Parses directory path from link type ###
-def LinkDirectory(aUri):
-    removedResRec = aUri[10:] # Removes "resrec:///"
-    sliceIndex = removedResRec.find("/") # Finds first forward slash 
-    ownerID = removedResRec[:(sliceIndex)] # Loads username
-    uriID = removedResRec[(sliceIndex + 1):] # Loads URI
+# def LinkDirectory(aUri):
+#     removedResRec = aUri[10:] # Removes "resrec:///"
+#     sliceIndex = removedResRec.find("/") # Finds first forward slash 
+#     ownerID = removedResRec[:(sliceIndex)] # Loads username
+#     uriID = removedResRec[(sliceIndex + 1):] # Loads URI
 
-    gReq = requests.get(f"https://api.resonite.com/users/{ownerID}/records/{uriID}").json() # Gets link JSON
+#     gReq = requests.get(f"https://api.resonite.com/users/{ownerID}/records/{uriID}").json() # Gets link JSON
 
-    return [gReq["ownerId"], gReq["path"]] # Returns the user ID and path within their inventory
+#     return [gReq["ownerId"], gReq["path"]] # Returns the user ID and path within their inventory
+########################################
 
 ### Dumps the inventory starting from the user provided directory ###
-def InventoryDump():
-    if os.path.isdir("_JSON"):
+def InventoryDump(methodSel):
+    if os.path.isdir("_JSON"): # Checks for "_JSON" directory and writes if not existing
         pass
     else:
         os.mkdir("_JSON")
 
     userActual = input("Input owner's user or group ID (CASE SENSITIVE): ") # Input of owner's ID
-    pathInp = "Inventory/" + input("Input starting folder path (CASE SENSITIVE): ") # Input of starting directory
-    pathActual = pathlib.PureWindowsPath(pathInp) # Initial directory formatting
-    
-    gDirs = [pathActual] # List for directories
-    gSubLinks = [] # List for links
+    confDirs = [] # List for initial directories
+    gDirs = [] # List for main loop directories
+    #UNUSED# gSubLinks = [] # List for links
 
-    while gDirs: # Loops until all directories have been written
-        dirName = pathlib.PureWindowsPath(gDirs[0]).stem # Loads current directory name
+    if methodSel == 0: # Manual Input of directory
+            pathInp = input("Input starting folder path (CASE SENSITIVE): ") # Input of starting directory
+            confFormatted = pathlib.PureWindowsPath(pathInp[x]) # Formatted directory string
+            confDirs.append("Inventory\\" + str(confFormatted)) # List for directories
 
-        gReq = requests.get(f"{RESO_URL}/users/{userActual}/records", \
-                            headers = authHeaders, \
-                            params={"path": gDirs[0]}).json() # Gets directory JSON from API
+    elif methodSel == 1: # Directories from "AutoConf.conf"
+        if os.path.isfile("AutoConf.conf"):
+            with open("AutoConf.conf", "r") as f:
+                pathInp = f.read().splitlines() # Reads lines of file and creates list
+                for x in range(len(pathInp)):
+                    confFormatted = pathlib.PureWindowsPath(pathInp[x]) # Formatted directory string 
+                    confDirs.append("Inventory\\" + str(confFormatted)) # Appends path to initial directory list
 
-        with open(f"{DUMP_PATH}/INV_{dirName}.json", 'w') as f: # Writes JSON to file
-            f.write(json.dumps(gReq, indent=4))
+    for confIt in range(len(confDirs)):
+        gDirs.clear() # Clears iteraion list
+        gDirs.append(confDirs[confIt]) # Appends iterated directory to first position
+        while gDirs: # Loops until all directories have been written
+            dirName = pathlib.PureWindowsPath(gDirs[0]).stem # Loads current directory name
 
-        gLength = len(gReq) # Counts items within JSON
+            gReq = requests.get(f"{RESO_URL}/users/{userActual}/records", \
+                                headers = authHeaders, \
+                                params={"path": gDirs[0]}).json() # Gets directory JSON from API
 
-        for x in range(gLength):
-            if gReq[x]["recordType"] == "directory": # Checks if the entry is a directory
-                print(gReq[x]["path"] + "\\" + gReq[x]["name"]) # Prints directory to console
-                gDirs.append(gReq[x]["path"] + "\\" + gReq[x]["name"]) # Adds directory to list
+            with open(f"{DUMP_PATH}/INV_{dirName}.json", 'w') as f: # Writes JSON to file
+                f.write(json.dumps(gReq, indent=4))
 
-            elif gReq[x]["recordType"] == "link": # Checks if the entry is a public folder
-                gSubLinks.append(gReq[x]["assetUri"]) #---------- TO DO ----------#
-        
-        gDirs.pop(0) # Removes current directory from list and loads next one
-    
-    #-- DEBUG: Writes directories to single file --#
-    # with open(f"{DUMP_PATH}\\_DIRS.txt", 'w') as f:
-    #     for x in range(len(gDirs)):
-    #         f.write(f"{RESO_URL}/users/{userActual}/records/{gDirs[x]}\n")
+            gLength = len(gReq) # Counts items within JSON
+
+            for x in range(gLength):
+                if gReq[x]["recordType"] == "directory": # Checks if the entry is a directory
+                    print(gReq[x]["path"] + "\\" + gReq[x]["name"]) # Prints directory to console
+                    gDirs.append(gReq[x]["path"] + "\\" + gReq[x]["name"]) # Adds directory to list
+
+                #UNUSED# elif gReq[x]["recordType"] == "link": # Checks if the entry is a public folder
+                #UNUSED#     gSubLinks.append(gReq[x]["assetUri"]) # Adds link to list
+            
+            gDirs.pop(0) # Removes current directory from list and loads next one
 
 ##############################################
 ### (SECT_4) DATABASE HANDLING
 ##############################################
 def CreateDatabase():
-    if not os.path.isfile("DATABASE.db"):
+    if not os.path.isfile("DATABASE.db"): # Creates SQlite database if one does not exist
         with sqlite3.connect("DATABASE.db") as conn:
                 c = conn.cursor()
 
@@ -234,21 +263,21 @@ def CreateDatabase():
                         ); """
                 c.execute(worldTable)
 
-    with sqlite3.connect("DATABASE.db") as conn:
+    with sqlite3.connect("DATABASE.db") as conn: # Adds parsed info to database
         c = conn.cursor()
 
-        for x in os.listdir("_JSON"):
+        for x in os.listdir("_JSON"): # Loops through json files in directory
             with open((f"_JSON/{x}"), 'r') as f:
                 jsonDump = json.load(f)
 
                 for y in range(len(jsonDump)):
                     dbTags = ""
 
-                    if jsonDump[y]["recordType"] == "object":
+                    if jsonDump[y]["recordType"] == "object": # Item handling
                         dbLink = "resrec:///"+ str(jsonDump[y]["id"])
                         dbTable = "Items"
 
-                        for z in range(len(jsonDump[y]["tags"])):
+                        for z in range(len(jsonDump[y]["tags"])): # Checks if the item is a world orb or not
                             if jsonDump[y]["tags"][z][:9] != "world_url":
                                 dbTags += str(jsonDump[y]["tags"][z]) + " "
 
@@ -257,17 +286,17 @@ def CreateDatabase():
                                 dbLink = worldOrb
                                 dbTable = "Worlds"
                         
-                        dbNameFIRST = str(jsonDump[y]["name"])
-                        dbName = dbNameFIRST.replace("\"","'")
-                        dbPath = jsonDump[y]["path"]
+                        dbNameFIRST = str(jsonDump[y]["name"]) # Gets the name of the item
+                        dbName = dbNameFIRST.replace("\"","'") # Replaces double quotes with single quotes
+                        dbPath = jsonDump[y]["path"] # Path of the item within the game
                         
-                        if dbTable == "Worlds":
+                        if dbTable == "Worlds": # Inserts world orb info into the proper table with tags
                             addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
-                        else:
+                        else: # Inserts item info into the proper table without tags (not truly active in game yet)
                             addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbPath}")'
                         c.execute(addTo)
 
-                    elif jsonDump[y]["recordType"] == "link":
+                    elif jsonDump[y]["recordType"] == "link": # Inserts public folder links and info into the proper table
                         dbName = str(jsonDump[y]["name"])
                         dbLink = "resrec:///"+ str(jsonDump[y]["id"])
                         dbPath = jsonDump[y]["path"]
