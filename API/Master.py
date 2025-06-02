@@ -1,3 +1,4 @@
+import configparser
 import datetime
 import getpass
 import json
@@ -9,7 +10,6 @@ import time
 import secrets
 import sqlite3
 import sys
-from Utils import ClrScr
 
 ##############################################
 ### (SECT_0) CONSTANTS
@@ -190,23 +190,28 @@ def InventoryDump(methodSel):
     else:
         os.mkdir("_JSON")
 
-    userActual = input("Input owner's user or group ID (CASE SENSITIVE): ") # Input of owner's ID
+    config = configparser.ConfigParser() # For config reading
+    userActual = [] # List for users/groups
     confDirs = [] # List for initial directories
     gDirs = [] # List for main loop directories
     #UNUSED# gSubLinks = [] # List for links
 
     if methodSel == 0: # Manual Input of directory
+            userActual.append(input("Input owner's user or group ID (CASE SENSITIVE): ")) # Input of owner's ID)
             pathInp = input("Input starting folder path (CASE SENSITIVE): ") # Input of starting directory
             confFormatted = pathlib.PureWindowsPath(pathInp[x]) # Formatted directory string
             confDirs.append("Inventory\\" + str(confFormatted)) # List for directories
 
     elif methodSel == 1: # Directories from "AutoConf.conf"
         if os.path.isfile("AutoConf.conf"):
-            with open("AutoConf.conf", "r") as f:
-                pathInp = f.read().splitlines() # Reads lines of file and creates list
-                for x in range(len(pathInp)):
-                    confFormatted = pathlib.PureWindowsPath(pathInp[x]) # Formatted directory string 
-                    confDirs.append("Inventory\\" + str(confFormatted)) # Appends path to initial directory list
+            config.read("AutoConf.conf")
+            confSections = config.sections()
+            userActual = []
+
+            for x in range(len(confSections)):
+                userActual.append(config[confSections[x]]["User"]) # Usernames for directories
+                confFormatted = pathlib.PureWindowsPath(config[confSections[x]]["Path"]) # Formatted directory string 
+                confDirs.append("Inventory\\" + str(confFormatted)) # Appends path to initial directory list
 
     for confIt in range(len(confDirs)):
         gDirs.clear() # Clears iteraion list
@@ -214,7 +219,7 @@ def InventoryDump(methodSel):
         while gDirs: # Loops until all directories have been written
             dirName = pathlib.PureWindowsPath(gDirs[0]).stem # Loads current directory name
 
-            gReq = requests.get(f"{RESO_URL}/users/{userActual}/records", \
+            gReq = requests.get(f"{RESO_URL}/users/{userActual[confIt]}/records", \
                                 headers = authHeaders, \
                                 params={"path": gDirs[0]}).json() # Gets directory JSON from API
 

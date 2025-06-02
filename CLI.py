@@ -36,6 +36,7 @@ def MenuSelect(menuOpt):
                 ClrScr()
                 print("Pulled inventory!")
                 API.CreateDatabase()
+                ClrScr()
                 print("Database created!")
 
             case 9: # Exit the program
