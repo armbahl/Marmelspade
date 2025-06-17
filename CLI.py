@@ -26,18 +26,17 @@ def MenuSelect(menuOpt):
                 ClrScr()
                 print("Pulled inventory!")
 
-            case 2:
+            case 2: # Creates SQLite database from JSON files
                 API.CreateDatabase()
                 ClrScr()
                 print("Database created!")
 
-            case 3:
+            case 3: # Uses config for pull targets and sorts raw JSON
                 API.InventoryDump(1)
                 ClrScr()
                 print("Pulled inventory!")
-                API.CreateDatabase()
-                ClrScr()
-                print("Database created!")
+                JsonPrune()
+                print("JSON sorted!")
 
             case 9: # Exit the program
                 menuOpt = False

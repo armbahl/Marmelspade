@@ -16,8 +16,8 @@ import sys
 ##############################################
 
 DUMP_PATH = "_JSON"
-ERROR_HANDLER = False
-RESO_URL = "https://api.resonite.com"
+RESO_APIURL = "https://api.resonite.com"
+RESO_ASSETURL = "https://assets.resonite.com"
 TOKEN_PATH = "AUTH_TOKEN.json"
 
 ##############################################
@@ -63,8 +63,8 @@ def TokenFileCheck():
         print("ERROR E102:\nTOKEN CHECK NOT WORKING")
         sys.exit(0)
 
-def HashGen():
 ### Machine ID generation ###
+def HashGen():
     try:
         z = secrets.token_hex(16) # Random number
         x = 8 # Sring slicer offset
@@ -109,7 +109,7 @@ def ResoLogin():
                     "rememberMe": True
             }
 
-            pReq = requests.post(f"{RESO_URL}/userSessions", \
+            pReq = requests.post(f"{RESO_APIURL}/userSessions", \
                                 headers=pHeaders, \
                                 json=pLogin) # POST request
 
@@ -146,7 +146,7 @@ def ResoLogin():
 def ResoLogout():
     try:
         TokenFileCheck()
-        dPath = f"{RESO_URL}/userSessions/{authUser}/{authToken}" # Prep URL
+        dPath = f"{RESO_APIURL}/userSessions/{authUser}/{authToken}" # Prep URL
 
         dReq = requests.delete(dPath, headers=authHeaders) # DELETE request
 
@@ -167,21 +167,8 @@ def ResoLogout():
         sys.exit(0)
 
 ##############################################
-### (SECT_3) INVENTORY FUNCTIONS
+### (SECT_3) JSON RETRIEVAL AND PARSING
 ##############################################
-
-################ UNUSED ################
-### Parses directory path from link type ###
-# def LinkDirectory(aUri):
-#     removedResRec = aUri[10:] # Removes "resrec:///"
-#     sliceIndex = removedResRec.find("/") # Finds first forward slash 
-#     ownerID = removedResRec[:(sliceIndex)] # Loads username
-#     uriID = removedResRec[(sliceIndex + 1):] # Loads URI
-
-#     gReq = requests.get(f"https://api.resonite.com/users/{ownerID}/records/{uriID}").json() # Gets link JSON
-
-#     return [gReq["ownerId"], gReq["path"]] # Returns the user ID and path within their inventory
-########################################
 
 ### Dumps the inventory starting from the user provided directory ###
 def InventoryDump(methodSel):
@@ -194,12 +181,11 @@ def InventoryDump(methodSel):
     userActual = [] # List for users/groups
     confDirs = [] # List for initial directories
     gDirs = [] # List for main loop directories
-    #UNUSED# gSubLinks = [] # List for links
 
     if methodSel == 0: # Manual Input of directory
             userActual.append(input("Input owner's user or group ID (CASE SENSITIVE): ")) # Input of owner's ID)
             pathInp = input("Input starting folder path (CASE SENSITIVE): ") # Input of starting directory
-            confFormatted = pathlib.PureWindowsPath(pathInp[x]) # Formatted directory string
+            confFormatted = pathlib.PureWindowsPath(pathInp) # Formatted directory string
             confDirs.append("Inventory\\" + str(confFormatted)) # List for directories
 
     elif methodSel == 1: # Directories from "AutoConf.conf"
@@ -212,6 +198,7 @@ def InventoryDump(methodSel):
                 userActual.append(config[confSections[x]]["User"]) # Usernames for directories
                 confFormatted = pathlib.PureWindowsPath(config[confSections[x]]["Path"]) # Formatted directory string 
                 confDirs.append("Inventory\\" + str(confFormatted)) # Appends path to initial directory list
+        print(confDirs)
 
     for confIt in range(len(confDirs)):
         gDirs.clear() # Clears iteraion list
@@ -219,7 +206,7 @@ def InventoryDump(methodSel):
         while gDirs: # Loops until all directories have been written
             dirName = pathlib.PureWindowsPath(gDirs[0]).stem # Loads current directory name
 
-            gReq = requests.get(f"{RESO_URL}/users/{userActual[confIt]}/records", \
+            gReq = requests.get(f"{RESO_APIURL}/users/{userActual[confIt]}/records", \
                                 headers = authHeaders, \
                                 params={"path": gDirs[0]}).json() # Gets directory JSON from API
 
@@ -233,10 +220,147 @@ def InventoryDump(methodSel):
                     print(gReq[x]["path"] + "\\" + gReq[x]["name"]) # Prints directory to console
                     gDirs.append(gReq[x]["path"] + "\\" + gReq[x]["name"]) # Adds directory to list
 
-                #UNUSED# elif gReq[x]["recordType"] == "link": # Checks if the entry is a public folder
-                #UNUSED#     gSubLinks.append(gReq[x]["assetUri"]) # Adds link to list
-            
             gDirs.pop(0) # Removes current directory from list and loads next one
+
+### Prunes the raw JSON files ###
+def JsonPrune():
+    parsedDir = "ParsedJSON" # Directory name
+
+    if os.path.isdir(parsedDir): # Checks for directory and writes if not existing
+        pass
+    else:
+        os.mkdir(parsedDir)
+
+    dirList = os.listdir(DUMP_PATH) # Creates list with file names in dir
+
+    pDir = [] # Directory list init
+    pLin = [] # Link list init
+    
+    # Object list init
+    pObj = [ 
+            [],[],[],[],[],[],[],[],[],[],[],[],[],
+            [],[],[],[],[],[],[],[],[],[],[],[],[],
+            []
+           ]
+
+    # Letter index
+    pLetters = [
+                "A","B","C","D","E","F","G","H","I","J","K","L",
+                "M","N","O","P","Q","R","S","T","U","V","W","X",
+                "Y","Z","1"
+               ]
+
+    for x in range(len(dirList)): # Loops through json files in directory
+        with open((f"{DUMP_PATH}/{dirList[x]}"), 'r') as f:
+            jsonDump = json.load(f) # Loads JSON from file
+        
+        for y in range(len(jsonDump)): # Removes objects from JSON
+            jsonDump[y].pop("version")
+            # jsonDump[y].pop("tags")
+            jsonDump[y].pop("isPublic")
+            jsonDump[y].pop("isForPatrons")
+            jsonDump[y].pop("isListed")
+            jsonDump[y].pop("isReadOnly")
+            jsonDump[y].pop("isDeleted")
+            jsonDump[y].pop("creationTime")
+            jsonDump[y].pop("lastModificationTime")
+            jsonDump[y].pop("randomOrder")
+            jsonDump[y].pop("visits")
+            jsonDump[y].pop("rating")
+            jsonDump[y].pop("ownerName")
+            jsonDump[y].pop("ownerId")
+
+            if jsonDump[y]["recordType"] == "directory": # Directory list append
+                pDir.append(jsonDump[y])
+
+            elif jsonDump[y]["recordType"] == "link": # Link list append
+                pLin.append(jsonDump[y])
+
+            else: # Object list append
+                itemId = jsonDump[y]["id"] # resrec addition
+                resrecId = f"resrec:///{itemId}"
+                jsonDump[y].update({"resrecUri": resrecId})
+
+                uriSliced = jsonDump[y]["thumbnailUri"] # Thumbnail URL addition
+                thumbnailUrl = f"{RESO_ASSETURL}/{uriSliced[9:-5]}"
+                jsonDump[y].update({"thumbnailUrl": thumbnailUrl})
+
+                test = jsonDump[y]["name"][0].upper() # Matches first letter of object name and sets index
+
+                match test:
+                    case "A":
+                        objIndex = 0
+                    case "B":
+                        objIndex = 1
+                    case "C":
+                        objIndex = 2
+                    case "D":
+                        objIndex = 3
+                    case "E":
+                        objIndex = 4
+                    case "F":
+                        objIndex = 5
+                    case "G":
+                        objIndex = 6
+                    case "H":
+                        objIndex = 7
+                    case "I":
+                        objIndex = 8
+                    case "J":
+                        objIndex = 9
+                    case "K":
+                        objIndex = 10
+                    case "L":
+                        objIndex = 11
+                    case "M":
+                        objIndex = 12
+                    case "N":
+                        objIndex = 13
+                    case "O":
+                        objIndex = 14
+                    case "P":
+                        objIndex = 15
+                    case "Q":
+                        objIndex = 16
+                    case "R":
+                        objIndex = 17
+                    case "S":
+                        objIndex = 18
+                    case "T":
+                        objIndex = 19
+                    case "U":
+                        objIndex = 20
+                    case "V":
+                        objIndex = 21
+                    case "W":
+                        objIndex = 22
+                    case "X":
+                        objIndex = 23
+                    case "Y":
+                        objIndex = 24
+                    case "Z":
+                        objIndex = 25
+                    case _:
+                        objIndex = 26
+
+                pObj[objIndex].append(jsonDump[y]) # Appends object to proper final index
+
+    # File writes
+    subWrite = json.dumps(pDir, indent=4) # Directories
+    finalWrite = subWrite[:-2]
+    with open(f"{parsedDir}/_directories.json", "a") as f:
+        f.write(f"{finalWrite}\n]")
+
+    subWrite = json.dumps(pLin, indent=4) # Links
+    finalWrite = subWrite[:-2]
+    with open(f"{parsedDir}/_links.json", "a") as f:
+        f.write(f"{finalWrite}\n]")
+
+    for x in range(27): # Objects
+        subWrite = json.dumps(pObj[x], indent=4)
+        finalWrite = subWrite[:-2]
+        with open(f"{parsedDir}/obj_{pLetters[x]}.json", "a") as f:
+            f.write(f"{finalWrite}")
 
 ##############################################
 ### (SECT_4) DATABASE HANDLING
