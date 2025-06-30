@@ -13,10 +13,12 @@ def MenuSelect(menuOpt):
     while menuOpt == True:
         print("Please select an option:\n\n"+\
                 
-            "1) Pull Inventory\n"+\
-            "2) Create Database\n"+\
-            "9) Exit\n"+\
-            "99) LOGOUT\n")
+            "1) Pull Inventory (Manual)\n"+\
+            "2) Pull Inventory (Config File)\n"+\
+            "3) Sort JSON for web\n"+\
+            "4) Create Database\n"+\
+            "0) Exit\n"+\
+            "999) LOGOUT\n")
 
         usrInp = int(input("<SELECTION>: "))
 
@@ -26,24 +28,27 @@ def MenuSelect(menuOpt):
                 ClrScr()
                 print("Pulled inventory!")
 
-            case 2: # Creates SQLite database from JSON files
+            case 2: # Uses config for pull targets
+                API.InventoryDump(1)
+                ClrScr()
+                print("Pulled inventory!")
+            
+            case 3: # Sorts JSON for web
+                API.JsonPrune()
+                ClrScr()
+                print("JSON sorted!")
+
+            case 4: # Creates SQLite database from JSON files
                 API.CreateDatabase()
                 ClrScr()
                 print("Database created!")
 
-            case 3: # Uses config for pull targets and sorts raw JSON
-                API.InventoryDump(1)
-                ClrScr()
-                print("Pulled inventory!")
-                JsonPrune()
-                print("JSON sorted!")
-
-            case 9: # Exit the program
+            case 0: # Exit the program
                 menuOpt = False
                 ClrScr()
                 print("Thank you for using Marmelspade!\n")
 
-            case 99: # Logout
+            case 999: # Logout
                 ClrScr()
                 API.ResoLogout()
                 menuOpt = False

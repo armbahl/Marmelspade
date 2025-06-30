@@ -371,9 +371,10 @@ def CreateDatabase():
                 c = conn.cursor()
 
                 itemTable = """CREATE TABLE "Items" (
-                        "Name"	TEXT NOT NULL,
-                        "Link"	TEXT NOT NULL,
-                        "Path"	TEXT NOT NULL
+                        "Name"	    TEXT NOT NULL,
+                        "Link"	    TEXT NOT NULL,
+                        "Path"	    TEXT NOT NULL,
+                        "Thumbnail" TEXT NOT NULL
                         ); """
                 c.execute(itemTable)
 
@@ -401,9 +402,9 @@ def CreateDatabase():
 
                 for y in range(len(jsonDump)):
                     dbTags = ""
+                    dbLink = "resrec:///"+ str(jsonDump[y]["id"])
 
                     if jsonDump[y]["recordType"] == "object": # Item handling
-                        dbLink = "resrec:///"+ str(jsonDump[y]["id"])
                         dbTable = "Items"
 
                         for z in range(len(jsonDump[y]["tags"])): # Checks if the item is a world orb or not
@@ -422,7 +423,9 @@ def CreateDatabase():
                         if dbTable == "Worlds": # Inserts world orb info into the proper table with tags
                             addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
                         else: # Inserts item info into the proper table without tags (not truly active in game yet)
-                            addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbPath}")'
+                            uriSliced = jsonDump[y]["thumbnailUri"] # Thumbnail URL addition
+                            dbThumbnail = f"{RESO_ASSETURL}/{uriSliced[9:-5]}"
+                            addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbPath}", "{dbThumbnail}")'
                         c.execute(addTo)
 
                     elif jsonDump[y]["recordType"] == "link": # Inserts public folder links and info into the proper table
