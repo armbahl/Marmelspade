@@ -1,5 +1,5 @@
 # Marmelspade
-A tool that can help you organize your virtual inventory externally for Resonite!
+A tool that can make an SQLite database of your Resonite inventory!
 ### How to use:
 1. Make sure you have Python 3.13 or later on your machine.
 2. In your terminal, navigate to the directory with "CLI.py."
