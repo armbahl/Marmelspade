@@ -198,7 +198,6 @@ def InventoryDump(methodSel):
                 userActual.append(config[confSections[x]]["User"]) # Usernames for directories
                 confFormatted = pathlib.PureWindowsPath(config[confSections[x]]["Path"]) # Formatted directory string 
                 confDirs.append("Inventory\\" + str(confFormatted)) # Appends path to initial directory list
-        print(confDirs)
 
     for confIt in range(len(confDirs)):
         gDirs.clear() # Clears iteraion list
@@ -374,7 +373,8 @@ def CreateDatabase():
                         "Name"	    TEXT NOT NULL,
                         "Link"	    TEXT NOT NULL,
                         "Path"	    TEXT NOT NULL,
-                        "Thumbnail" TEXT NOT NULL
+                        "Thumbnail" TEXT NOT NULL,
+                        "Tags"      TEXT NOT NULL
                         ); """
                 c.execute(itemTable)
 
@@ -420,12 +420,12 @@ def CreateDatabase():
                         dbName = dbNameFIRST.replace("\"","'") # Replaces double quotes with single quotes
                         dbPath = jsonDump[y]["path"] # Path of the item within the game
                         
-                        if dbTable == "Worlds": # Inserts world orb info into the proper table with tags
+                        if dbTable == "Worlds": # Inserts world orb info into the proper table
                             addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbTags}", "{dbPath}")'
-                        else: # Inserts item info into the proper table without tags (not truly active in game yet)
+                        else: # Inserts item info into the proper table
                             uriSliced = jsonDump[y]["thumbnailUri"] # Thumbnail URL addition
                             dbThumbnail = f"{RESO_ASSETURL}/{uriSliced[9:-5]}"
-                            addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbPath}", "{dbThumbnail}")'
+                            addTo = f'INSERT INTO {dbTable} VALUES ("{dbName}", "{dbLink}", "{dbPath}", "{dbThumbnail}", "{dbTags})'
                         c.execute(addTo)
 
                     elif jsonDump[y]["recordType"] == "link": # Inserts public folder links and info into the proper table
