@@ -1,10 +1,13 @@
 import os
-from Utils import ClrScr
 import API.Master as API
 
 ##############################################
 ### (SECT_0) FUNCS
 ##############################################
+
+### Clears console screen ###
+def ClrScr():
+    print("\x1B[H\x1B[J", end="")
 
 ### Main menu ###
 def MenuSelect(menuOpt):
@@ -59,7 +62,7 @@ def MenuSelect(menuOpt):
 
 ### Login checker ###
 def LoginProc():
-    if API.ResoLogin():
+    if API.ResoLogin(True, None, None):
         MenuSelect(True)
     else:
         pass

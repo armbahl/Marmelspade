@@ -26,23 +26,28 @@ TOKEN_PATH = "AUTH_TOKEN.json"
 
 ### Token age check ###
 def ExpireCheck(expDays):
-    if os.path.isfile(TOKEN_PATH):
-        tokenTimestamp = os.path.getmtime(TOKEN_PATH)
-        currentTime = time.time()
-        elapsedDays = datetime.timedelta(seconds=(currentTime - tokenTimestamp)).days
+    try:
+        if os.path.isfile(TOKEN_PATH):
+            tokenTimestamp = os.path.getmtime(TOKEN_PATH)
+            currentTime = time.time()
+            elapsedDays = datetime.timedelta(seconds=(currentTime - tokenTimestamp)).days
 
-        if elapsedDays > expDays:
-            return True
+            if elapsedDays > expDays:
+                return True
+            else:
+                return False
         else:
-            return False
-    else:
+            ### print("ERROR E101:\nEXPIRE CHECK ERROR")
+            pass
+    except:
         print("ERROR E101:\nEXPIRE CHECK ERROR")
+        sys.exit(0)
 
+### Token file existence check and reading ###
 authUser = None
 authToken = None
 authHeaders = None
 
-### Token file existence check and reading ###
 def TokenFileCheck():
     try:
         global authUser
@@ -93,14 +98,20 @@ def HashGen():
 ##############################################
 
 ### Login handler ###
-def ResoLogin():
+def ResoLogin(method, uName, uPass):
     try:
         loopCheck = True
         while loopCheck == True:
-            username = input("\x1B[HUsername: ")
-            password = getpass.getpass(prompt="Password: ")
+            if method == True:
+                username = input("\x1B[HUsername: ")
+                password = getpass.getpass(prompt="Password: ")
+                headerTOTP = getpass.getpass(prompt="2FA (leave blank if not using): ")
+            else:
+                username = uName
+                password = uPass
+                headerTOTP = None
+                
             headerUID = secrets.token_hex(32)
-            headerTOTP = getpass.getpass(prompt="2FA (leave blank if not using): ")
 
             pHeaders = {"UID": headerUID, "TOTP": headerTOTP}
             pLogin = {"username": username,
@@ -358,7 +369,7 @@ def JsonPrune():
     for x in range(27): # Objects
         subWrite = json.dumps(pObj[x], indent=4)
         finalWrite = subWrite[:-2]
-        with open(f"{parsedDir}/obj_{pLetters[x]}.json", "a") as f:
+        with open(f"{parsedDir}/{pLetters[x]}_obj.json", "a") as f:
             f.write(f"{finalWrite}")
 
 ##############################################
