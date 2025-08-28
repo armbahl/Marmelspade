@@ -1,7 +1,11 @@
 {
+  "name": "marmelspade",
+  "version": "1.1.0",
+  "description": "A tool that can pull records from Resonite public folders",
+  "license": "MIT",
+  "author": "ARandomMeatball",
   "type": "module",
-  "dependencies": {
-  },
+  "main": "./main.MAIN.js",
   "scripts": {
     "start": "node ./main/MAIN.js"
   }

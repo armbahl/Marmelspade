@@ -1,10 +1,19 @@
 {
     "EXAMPLE_FORMAT": {
-        "id" : "U-USER_ID (or) G-GROUP_ID",
-        "directory": "Inventory\\EXAMPLE\\FOLDER"
+        "0": {
+            "id" : "U-USER_ID (or) G-GROUP_ID",
+            "directory": "Inventory\\EXAMPLE\\FOLDER"
+        },
+        "1": {
+            "id" : "U-USER_ID (or) G-GROUP_ID",
+            "directory": "Inventory\\EXAMPLE\\FOLDER"
+        }
     },
     
     "locations": {
-
+        "0": {
+            "id": "USER_ID_HERE",
+            "directory": "FOLDER_HERE"
+        }
     }
 }

@@ -1,4 +1,3 @@
-import * as inventory from './InventoryPull.js';
+import {InventoryDump} from './InventoryPull.js';
 
-// inventory.InventoryDump();
-inventory.ExportToMongoDB();
+InventoryDump();
