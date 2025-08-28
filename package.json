@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "dependencies": {
+  },
+  "scripts": {
+    "start": "node ./main/MAIN.js"
+  }
+}

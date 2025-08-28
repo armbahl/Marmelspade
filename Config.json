@@ -1,0 +1,10 @@
+{
+    "EXAMPLE_FORMAT": {
+        "id" : "U-USER_ID (or) G-GROUP_ID",
+        "directory": "Inventory\\EXAMPLE\\FOLDER"
+    },
+    
+    "locations": {
+
+    }
+}
