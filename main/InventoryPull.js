@@ -4,7 +4,7 @@ const CONFIG = "./Config.json"; // Config file path
 const RESO_APIURL = "https://api.resonite.com"; // Base API URL
 
 // GET requests
-async function GetRequest(url, user, path) {
+async function getRequest(url, user, path) {
     const query = encodeURIComponent(path); // Converts inventory path to URL encoded format
     const urlWithQuery = `${url}/users/${user}/records?path=${query}`; // Adds query to base URL
     const response = await fetch(urlWithQuery, {method: 'GET'}); // Fetches data from API
@@ -24,7 +24,7 @@ async function GetRequest(url, user, path) {
 }
 
 // Main function to pull inventory and save to JSON files
-export async function InventoryDump() {
+export async function inventoryDump() {
     const mainConfig = JSON.parse(fs.readFileSync(
         `./${CONFIG}`, (err) => {if (err) throw err})); // Reads user id's and associated inventory paths from config file
     
@@ -41,7 +41,7 @@ export async function InventoryDump() {
 
         // Recursively pulls directories and saves data to JSON files
         while (pulledDirs.length > 0) {
-            currentData = await GetRequest(RESO_APIURL, mainConfig["locations"][initDirs]["id"], pulledDirs[0]); // Fetches data
+            currentData = await getRequest(RESO_APIURL, mainConfig["locations"][initDirs]["id"], pulledDirs[0]); // Fetches data
 
             // Finds subdirectories and adds them to the array
             for (let i in currentData) {

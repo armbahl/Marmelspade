@@ -1,3 +1,3 @@
-import {InventoryDump} from './InventoryPull.js';
+import {inventoryDump} from './InventoryPull.js';
 
-InventoryDump();
+inventoryDump();
