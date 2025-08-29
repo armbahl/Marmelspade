@@ -2,6 +2,7 @@ import fs from 'fs';
 
 const CONFIG = "./Config.json"; // Config file path
 const RESO_APIURL = "https://api.resonite.com"; // Base API URL
+const RESO_ASSETURL = "https://assets.resonite.com"; // Base Asset URL
 
 // GET requests
 async function getRequest(url, user, path) {
@@ -33,6 +34,7 @@ export async function inventoryDump() {
     let pulledDirs = []; // Array to hold pulled directories
     let currentData; // Variable to hold current data from API
     let fileNumber = 0; // Counter for naming JSON files
+    let assetUrl; // Variable to hold actual asset URL
 
     // Loop through each index in "locations" within config file
     for (let initDirs in mainConfig["locations"]) {
@@ -42,12 +44,18 @@ export async function inventoryDump() {
         // Recursively pulls directories and saves data to JSON files
         while (pulledDirs.length > 0) {
             currentData = await getRequest(RESO_APIURL, mainConfig["locations"][initDirs]["id"], pulledDirs[0]); // Fetches data
+            console.log(pulledDirs[0]);
 
             // Finds subdirectories and adds them to the array
             for (let i in currentData) {
-                console.log(pulledDirs[0]);
                 if (currentData[i]["recordType"] === "directory") {
                     pulledDirs.push(currentData[i]["path"] + "\\" + currentData[i]["name"]);
+                }
+                else if (currentData[i]["recordType"] === "object") {
+                    assetUrl = currentData[i]["thumbnailUri"]; // Loads raw URI
+                    assetUrl = assetUrl.replace('resdb:///', `${RESO_ASSETURL}/`); // Replaces "resdb:///" with asset URL
+                    assetUrl = assetUrl.replace('.webp', ''); // Removes ".webp" from URL
+                    Object.assign(currentData[i], {"thumbnailUrl": assetUrl}); // Adds proper URL field to object
                 }
             }
             
