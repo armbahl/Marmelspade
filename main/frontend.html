@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/templates/basic_search.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+      /* instant-meilisearch CSS */
+      body{
+        background: #000000;
+        font-family: 'Share Tech Mono', 'Open Sans', sans-serif;
+      }
+
+      .wrapper{
+        width: 95%;
+        /* position: absolute; */
+        top: 20%;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 100px 0;
+
+      }
+
+      /* #### Tablets Portrait or Landscape #### */
+      @media screen and (min-device-width: 768px) and (max-device-width: 1024px){
+        .wrapper{
+          top: 20%;
+          width: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          position: absolute;
+        }
+      }
+
+      /* #### Desktops #### */
+      @media screen and (min-width: 1024px){
+        .wrapper{
+          top: 20%;
+          width: 75%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          position: absolute;
+        }
+      }
+
+      /* #### Desktops #### */
+      @media screen and (min-width: 1920px){
+        .wrapper{
+          top: 20%;
+          width: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          position: absolute;
+        }
+      }
+
+      .search {
+        width: 100%;
+        position: relative;
+        display: flex;
+        margin: 0 auto;
+      }
+
+      #searchbox {
+        width: 100%;
+        display: flex;
+        position: relative;
+        margin: 0 auto;
+      }
+
+      .ais-SearchBox {
+        width: 100%;
+        display: flex;
+      }
+
+      .ais-SearchBox-form {
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+      }
+
+      .ais-SearchBox-input {
+        width: 100%;
+        border: 3px solid #ff00ff;
+        border-right: none;
+        background: #222222;
+        padding: 5px;
+        height: 20px;
+        border-radius: 5px 0 0 5px;
+        outline: none;
+        color: #bbbbbb;
+      }
+
+      .ais-SearchBox-input:focus{
+        color:#ffffff;
+      }
+
+      .ais-SearchBox-submit {
+        width: 40px;
+        height: 36px;
+        border: 1px solid #ff00ff;
+        background: #ff00ff;
+        text-align: center;
+        color: #fff !important;
+        border-radius: 0 5px 5px 0;
+        cursor: pointer;
+        font-size: 20px;
+        right: 0;
+        position: relative;
+        box-sizing: border-box;
+        top: 50%;
+        left: 0;
+        padding: 0;
+        user-select: none;
+        transform: translateY(-50%);
+        cursor: pointer;
+      }
+
+      .ais-SearchBox-submitIcon {
+        width: 18px;
+        height: 18px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+      }
+
+      .ais-SearchBox-reset {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        position: absolute;
+        z-index: 1;
+        width: 20px;
+        height: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 0;
+        overflow: visible;
+        font: inherit;
+        line-height: normal;
+        color: inherit;
+        background: none;
+        border: 0;
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        right: 5px;
+      }
+
+      .ais-SearchBox-resetIcon {
+        position: absolute;
+        left: -27px;
+        width: 12px;
+        height: 12px;
+        top: 50%;
+        -webkit-transform: translateX(-50%) translateY(-50%);
+        transform: translateX(-50%) translateY(-50%);
+        cursor: pointer;
+        fill: #ffffff;
+      }
+
+      .ais-SearchBox-submit svg path {
+        fill: #000000;
+      }
+
+      .hits {
+        width: 100%;
+        position: relative;
+        display: flex;
+        margin: 0 auto;
+      }
+
+      .ais-Hits {
+        width: 100%;
+        display: flex;
+        position: relative;
+        margin: 0 auto;
+      }
+
+      .ais-Hits--empty {
+        box-sizing: border-box;
+        background-color: #222222;
+        position: absolute;
+        padding: 1rem;
+        margin: 0;
+        margin-top: 5px;
+        color:#ffffff;
+      }
+
+      .ais-Hits .ais-Hits-list {
+        display: block;
+        position: absolute;
+        top: 5px;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 0;
+        margin: 0;
+      }
+
+      .ais-Hits-list, .ais-Hits--empty {
+        border-radius: 3px;
+        border-color: #ffffff;
+        background: transparent;
+        background-color: #222222;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+
+      .ais-Hits .ais-Hits-list .ais-Hits-item {
+        margin: 0;
+        box-sizing: border-box;
+        display: block;
+        position: relative;
+        padding: 0;
+        box-shadow: 0 0 0 1px #00ffff;
+        width: 100%;
+        color: #ffffff;
+        font-weight: 500;
+        text-shadow: 0 0 transparent;
+        border: 1px solid transparent;
+        border-radius: 3px;
+        margin-bottom: 8px;
+      }
+
+      .ais-Hits-list .ais-Hits-item:last-child {
+        margin-bottom: 0px;
+      }
+
+      .ais-Highlight-highlighted {
+        font-size: 1em;
+        background-color: #00ffff;
+        color: #000000;
+      }
+      :-moz-placeholder {
+          color: #a7aabc;
+          font-weight: 200;
+      }
+
+      ::-webkit-input-placeholder {
+          color: #a7aabc;
+          font-weight: 200;
+      }
+
+      /* Custom CSS */
+      h1 {
+        display: block;
+        font-size: 4em;
+        margin-block-start: 0;
+        margin-block-end: 0;
+        margin-inline-start: 0;
+        margin-inline-end: 0;
+        font-weight: bold;
+        unicode-bidi: isolate;
+        color: #ffffff;
+      }
+
+      h2 {
+        display: block;
+        font-size: 1.5em;
+        margin-block-start: 0;
+        margin-block-end: 0;
+        margin-inline-start: 0;
+        margin-inline-end: 0;
+        font-weight: normal;
+        unicode-bidi: isolate;
+        color: #ffffff;
+      }
+
+      h3 {
+        text-align: center;
+        display: block;
+        font-size: 1.5em;
+        margin-block-start: 0;
+        margin-block-end: 1%;
+        margin-inline-start: 0;
+        margin-inline-end: 0;
+        font-weight: normal;
+        unicode-bidi: isolate;
+        color: #ffffff;
+      }
+
+      .hit-name {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .hit-icon {
+        max-width: 100%;
+        max-height: 75px;
+        width: auto;
+        height: auto;
+        display: block;
+        object-fit: contain;
+        padding: 2px;
+      }
+
+      button {
+        font-family: 'Share Tech Mono', 'Open Sans', sans-serif;
+        font-size: 100%;
+        /* transform: translate(0, 4px); */
+        width: 95%;
+        height: auto;
+        max-height: 64px;
+        appearance: auto;
+        text-rendering: auto;
+        color: #ffffff;
+        letter-spacing: normal;
+        word-spacing: normal;
+        line-height: normal;
+        text-transform: none;
+        text-indent: 0px;
+        text-shadow: none;
+        display: block;
+        text-align: center;
+        cursor: default;
+        box-sizing: border-box;
+        margin: 0 auto 0 auto;
+        padding-block: 1px;
+        padding-inline: 6px;
+        border-width: .1vw;
+        border-style: groove;
+        border-color: #ffffff;
+        border-image: initial;
+        background: #000000;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <h1 style="text-align: center">Marmelspade</h1>
+      <h2 style="text-align: center">Creator Jam database search engine</h2>
+      <br>
+      <div id="sortBy"></div>
+      <div id="searchbox" focus></div>
+      <div id="hits"></div>
+    </div>
+  </body>
+  <script src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+  <script>
+    const search = instantsearch({
+      indexName: "creatorjam",
+      searchClient: instantMeiliSearch(
+        "localhost:8080/meili", // Host URL
+        "aSampleMasterKey" // Public API Key
+      ).searchClient
+      });
+      search.addWidgets([
+        instantsearch.widgets.configure({ sort: ['name:asc'], hitsPerPage: 40 }),
+        instantsearch.widgets.searchBox({
+          container: "#searchbox"
+        }),
+        instantsearch.widgets.hits({
+          container: "#hits",
+          templates: {
+            item: `
+              <div class="hit-name">
+                <div style="display: flex; justify-content: center; background: #000000;">
+                  <img src="{{#helpers.highlight}}{"attribute": "thumbnailUrl"}{{/helpers.highlight}}" class="hit-icon"/>
+                </div>
+                <div>
+                  <h3 style="font-size: clamp(.5em, 1vw, 1em);">{{#helpers.highlight}}{ "attribute": "name" }{{/helpers.highlight}}</h3>
+                  <div style="font-size: .75em; text-align: center; color: #aaaaaa; margin-bottom: 4px;">
+                    {{#helpers.highlight}}{ "attribute": "path" }{{/helpers.highlight}}
+                  </div>
+                  <button id="copyBtn">Copy Link</button>
+                  <span class="resDBText" style="display: none" id="resDBLink">
+                    {{#helpers.highlight}}{ "attribute": "assetUri" }{{/helpers.highlight}}
+                  </span>
+                </div>
+              </div>
+            `
+          },
+          transformItems(items) {
+            return items.sort((a, b) => {
+              if (!a.name) return 1;
+              if (!b.name) return -1;
+              return a.name.localeCompare(b.name);
+            });
+          }
+        })
+      ]);
+      search.start();
+
+    document.getElementById('hits').addEventListener('click', function(e) {
+      if (e.target && e.target.id === 'copyBtn') {
+        const hitNameDiv = e.target.closest('.hit-name');
+        const resDBLink = hitNameDiv.querySelector('#resDBLink');
+        let text = resDBLink ? resDBLink.textContent : "";
+        navigator.clipboard.writeText(text).then(function() {
+          const originalText = e.target.textContent;
+          e.target.textContent = "Copied!";
+          setTimeout(() => e.target.textContent = originalText, 1500);
+        });
+      }
+    });
+  </script>
+</html>

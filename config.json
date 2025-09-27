@@ -1,0 +1,19 @@
+{
+    "inventoryPaths": {
+        "0": {
+            "id": "U-EXAMPLE-USER",
+            "directory": "Inventory\\EXAMPLE\\DIRECTORY"
+        },
+        "1": {
+            "id": "G-EXAMPLE-GROUP",
+            "directory": "Inventory\\EXAMPLE\\DIRECTORY"
+        }
+    },
+
+    "serverInfo": {
+        "host": "localhost",
+        "port": 8080,
+        "meiliPort": 7700,
+        "key": "aSampleMasterKey"
+    }
+}
