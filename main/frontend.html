@@ -17,7 +17,7 @@
       .wrapper{
         width: 95%;
         /* position: absolute; */
-        top: 20%;
+        top: 10%;
         margin-left: auto;
         margin-right: auto;
         padding: 100px 0;
@@ -27,7 +27,7 @@
       /* #### Tablets Portrait or Landscape #### */
       @media screen and (min-device-width: 768px) and (max-device-width: 1024px){
         .wrapper{
-          top: 20%;
+          top: 10%;
           width: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
@@ -38,7 +38,7 @@
       /* #### Desktops #### */
       @media screen and (min-width: 1024px){
         .wrapper{
-          top: 20%;
+          top: 10%;
           width: 75%;
           left: 50%;
           transform: translate(-50%, -50%);
@@ -49,7 +49,7 @@
       /* #### Desktops #### */
       @media screen and (min-width: 1920px){
         .wrapper{
-          top: 20%;
+          top: 10%;
           width: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
@@ -285,6 +285,13 @@
         color: #ffffff;
       }
 
+      p {
+        color: #ffffff;
+        text-align: center;
+        margin-top: 2px;
+        margin-bottom: 2px;
+      }
+
       .hit-name {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -330,13 +337,33 @@
         border-image: initial;
         background: #000000;
       }
+
+      .lineMain {
+        width: 75%;
+        background: #ffffff;
+        border: none;
+        height: 1px;
+        margin-top: 4px;
+        margin-bottom: 4px;
+      }
+
+      a {
+        color: #00ffff;
+        text-decoration: underline;
+      }
+
+      a:hover {
+        color: #ff00ff;
+      }
     </style>
   </head>
   <body>
     <div class="wrapper">
-      <h1 style="text-align: center">Marmelspade</h1>
-      <h2 style="text-align: center">Creator Jam database search engine</h2>
-      <br>
+      <h1 style="text-align: center; padding-top: 46px">Marmelspade</h1>
+      <h2 style="text-align: center;">Creator Jam database search engine</h2>
+      <p>Made by ARandomMeatball | MIT License | <a href="https://github.com/armbahl/Marmelspade">Github</a></p>
+      <hr class="lineMain"/>
+      <p style="padding-bottom: 16px;">Uses <a href="https://nodejs.org/">Node.js</a> and <a href="https://www.meilisearch.com/">Meilisearch</a></p>
       <div id="sortBy"></div>
       <div id="searchbox" focus></div>
       <div id="hits"></div>
