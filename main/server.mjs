@@ -6,25 +6,21 @@ const config = JSON.parse(fs.readFileSync('./config.json'));
 const FRONTENDPATH = './Main/frontend.html';
 const HOST = config.serverInfo.host;
 const PORT = config.serverInfo.port;
-const MEILI_PORT = config.serverInfo.meiliPort;
 const KEY = config.serverInfo.key;
-
-function setHostFrontend() {
-  let lines = fs.readFileSync(FRONTENDPATH, 'utf-8').split('\n');
-  lines[350] = `        "${HOST}:${PORT}/meili", // Host URL`;
-  lines[351] = `        "${KEY}" // Public API Key`;
-  fs.writeFileSync(FRONTENDPATH, lines.join('\n'), 'utf-8');
-}
-setHostFrontend();
+const HOST_URL = `${HOST}:${PORT}/meili`;
 
 const server = http.createServer((req, res) => {
   if (req.url === '/' || req.url === '/frontend.html') {
-    fs.readFile(FRONTENDPATH, (err, data) => {
+    fs.readFile(FRONTENDPATH, 'utf-8', (err, data) => {
       if (err) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('500 Internal Server Error');
         return;
       }
+      // Replace placeholders with actual values
+      data = data.replace(/__HOST_URL__/g, HOST_URL)
+                 .replace(/__API_KEY__/g, KEY);
+
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(data);
     });
@@ -35,12 +31,12 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       const options = {
         hostname: HOST,
-        port: MEILI_PORT,
+        port: config.serverInfo.meiliPort,
         path: req.url.replace('/meili', ''),
         method: req.method,
         headers: {
           ...req.headers,
-          'host': `${HOST}:${MEILI_PORT}`,
+          'host': `${HOST}:${config.serverInfo.meiliPort}`,
         }
       };
       const proxy = httpRequest(options, proxyRes => {

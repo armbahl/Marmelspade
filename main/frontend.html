@@ -247,6 +247,52 @@
           font-weight: 200;
       }
 
+      /* Pagination styles */
+      .ais-Pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 4px;
+        margin-bottom: 4px;
+        gap: 0;
+      }
+      .ais-Pagination-list {
+        display: flex;
+        padding: 0;
+        margin: 0;
+        gap: 4px;
+        list-style: none;
+      }
+
+      .ais-Pagination-item {
+        list-style: none;
+      }
+
+      .ais-Pagination-link {
+        display: block;
+        padding: 6px 12px;
+        color: #00ffff;
+        background: #222222;
+        border: 1px solid #ff00ff;
+        border-radius: 3px;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background 0.2s, color 0.2s;
+      }
+
+      .ais-Pagination-item--selected .ais-Pagination-link,
+      .ais-Pagination-link:hover {
+        background: #00ffff;
+        color: #000;
+      }
+
+      .ais-Pagination-item--disabled .ais-Pagination-link {
+        color: #888;
+        border-color: #444;
+        cursor: not-allowed;
+        background: #222;
+      }
+      
       /* Custom CSS */
       h1 {
         display: block;
@@ -349,7 +395,6 @@
 
       a {
         color: #00ffff;
-        text-decoration: underline;
       }
 
       a:hover {
@@ -359,12 +404,16 @@
   </head>
   <body>
     <div class="wrapper">
-      <h1 style="text-align: center; padding-top: 46px">Marmelspade</h1>
+      <h1 style="text-align: center; padding-top: 8vw">Marmelspade</h1>
       <h2 style="text-align: center;">Creator Jam database search engine</h2>
-      <p>Made by ARandomMeatball | MIT License | <a href="https://github.com/armbahl/Marmelspade">Github</a></p>
+      <p style="margin-bottom: 4px">Made by ARandomMeatball for <a href="https://creatorjam.com/">Creator Jam</a>
+        | <a href= "https://github.com/armbahl/Marmelspade/blob/main/LICENSE">MIT License</a>
+        | <a href="https://github.com/armbahl/Marmelspade">Github</a></p>
       <hr class="lineMain"/>
-      <p style="padding-bottom: 16px;">Uses <a href="https://nodejs.org/">Node.js</a> and <a href="https://www.meilisearch.com/">Meilisearch</a></p>
+      <p style="padding-bottom: 0px;">Uses <a href="https://nodejs.org/">Node.js</a> and <a href="https://www.meilisearch.com/">Meilisearch</a></p>
+      <hr class="lineMain" style="width: 85%;">
       <div id="sortBy"></div>
+      <div id="pagination"></div>
       <div id="searchbox" focus></div>
       <div id="hits"></div>
     </div>
@@ -375,8 +424,8 @@
     const search = instantsearch({
       indexName: "creatorjam",
       searchClient: instantMeiliSearch(
-        "localhost:8080/meili", // Host URL
-        "aSampleMasterKey" // Public API Key
+        "__HOST_URL__", // Host URL
+        "__API_KEY__" // Public API Key
       ).searchClient
       });
       search.addWidgets([
@@ -397,10 +446,7 @@
                   <div style="font-size: .75em; text-align: center; color: #aaaaaa; margin-bottom: 4px;">
                     {{#helpers.highlight}}{ "attribute": "path" }{{/helpers.highlight}}
                   </div>
-                  <button id="copyBtn">Copy Link</button>
-                  <span class="resDBText" style="display: none" id="resDBLink">
-                    {{#helpers.highlight}}{ "attribute": "assetUri" }{{/helpers.highlight}}
-                  </span>
+                  <input type="text" class="copyField" value="{{ assetUri }}" readonly style="width: 95%; margin: 0 auto 4px auto; display: block; background: #111; color: #fff; border: 1px solid #00ffff; border-radius: 3px; padding: 4px; font-family: inherit;"/>
                 </div>
               </div>
             `
@@ -412,20 +458,17 @@
               return a.name.localeCompare(b.name);
             });
           }
+        }),
+        instantsearch.widgets.pagination({
+          container: '#pagination'
         })
       ]);
       search.start();
 
     document.getElementById('hits').addEventListener('click', function(e) {
-      if (e.target && e.target.id === 'copyBtn') {
-        const hitNameDiv = e.target.closest('.hit-name');
-        const resDBLink = hitNameDiv.querySelector('#resDBLink');
-        let text = resDBLink ? resDBLink.textContent : "";
-        navigator.clipboard.writeText(text).then(function() {
-          const originalText = e.target.textContent;
-          e.target.textContent = "Copied!";
-          setTimeout(() => e.target.textContent = originalText, 1500);
-        });
+      if (e.target && e.target.classList.contains('copyField')) {
+        e.target.select();
+        e.target.setSelectionRange(0, 99999); // For mobile devices
       }
     });
   </script>
