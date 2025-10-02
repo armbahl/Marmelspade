@@ -16,7 +16,6 @@
 
       .wrapper{
         width: 95%;
-        /* position: absolute; */
         top: 10%;
         margin-left: auto;
         margin-right: auto;
@@ -116,7 +115,6 @@
         padding: 0;
         user-select: none;
         transform: translateY(-50%);
-        cursor: pointer;
       }
 
       .ais-SearchBox-submitIcon {
@@ -357,7 +355,6 @@
       button {
         font-family: 'Share Tech Mono', 'Open Sans', sans-serif;
         font-size: 100%;
-        /* transform: translate(0, 4px); */
         width: 95%;
         height: auto;
         max-height: 64px;
@@ -429,7 +426,7 @@
       ).searchClient
       });
       search.addWidgets([
-        instantsearch.widgets.configure({ sort: ['name:asc'], hitsPerPage: 40 }),
+        instantsearch.widgets.configure({ hitsPerPage: 40 }),
         instantsearch.widgets.searchBox({
           container: "#searchbox"
         }),

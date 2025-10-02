@@ -9,11 +9,11 @@
             "directory": "Inventory\\EXAMPLE\\DIRECTORY"
         }
     },
-
     "serverInfo": {
         "host": "localhost",
         "port": 8080,
         "meiliPort": 7700,
-        "key": "aSampleMasterKey"
+        "masterKey": "ChangeMe",
+        "searchKey": "PLACEHOLDER"
     }
 }
