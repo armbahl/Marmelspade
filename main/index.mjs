@@ -6,6 +6,7 @@ import fetch from 'node-fetch'; // Import fetch for Node.js
 
 const CONFIGPATH = "./config.json"; // Config file path
 
+// Parse config file
 let config;
 try {
   config = JSON.parse(fs.readFileSync(CONFIGPATH));
@@ -147,7 +148,49 @@ async function mPruneIndex() {
   }
 }
 
-// Utility function to create a search-only key in Meilisearch and save to config.json
+// Delete all search-only keys in Meilisearch
+async function deleteAllSearchOnlyKeys() {
+  try {
+    // Get all keys
+    const response = await fetch(`http://${HOST}:${MEILI_PORT}/keys`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${config.serverInfo.masterKey}`
+      }
+    });
+    if (!response.ok) throw new Error(`Failed to fetch keys: ${response.statusText}`);
+    const data = await response.json();
+
+    // Filter search-only keys (actions: ['search'])
+    const searchOnlyKeys = data.results.filter(
+      key => Array.isArray(key.actions) &&
+             key.actions.length === 1 &&
+             key.actions[0] === 'search'
+    );
+
+    // Delete each search-only key by UID
+    for (const key of searchOnlyKeys) {
+      const delRes = await fetch(`http://${HOST}:${MEILI_PORT}/keys/${key.uid}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${config.serverInfo.masterKey}`
+        }
+      });
+      if (delRes.ok) {
+        console.log(`Deleted search-only key: ${key.uid}`);
+      } else {
+        console.error(`Failed to delete key ${key.uid}: ${delRes.statusText}`);
+      }
+    }
+    if (searchOnlyKeys.length === 0) {
+      console.log('No search-only keys found.');
+    }
+  } catch (err) {
+    console.error('Error deleting search-only keys:', err.message);
+  }
+}
+
+// Create a search-only key in Meilisearch and save to config.json
 async function createSearchOnlyKeyAndSave() {
   try {
     const response = await fetch(`http://${HOST}:${MEILI_PORT}/keys`, {
@@ -171,10 +214,13 @@ async function createSearchOnlyKeyAndSave() {
     const data = await response.json();
     console.log('Search-only key:', data.key);
 
-    if (!config.serverInfo) {
-      config.serverInfo = {};
+    // Ensure "searchKey" exists in config
+    if (!('searchKey' in config.serverInfo)) {
+      config.serverInfo.searchKey = data.key;
+    } else {
+      config.serverInfo.searchKey = data.key;
     }
-    config.serverInfo.searchKey = data.key;
+
     try {
       fs.writeFileSync(CONFIGPATH, JSON.stringify(config, null, 4));
     } catch (err) {
@@ -187,13 +233,14 @@ async function createSearchOnlyKeyAndSave() {
   }
 }
 
-// Async function to create index, add documents, and prune index
+// Create index, add documents, and prune index
 async function indexData(files) {
   try {
     await mMakeIndex();
+    await deleteAllSearchOnlyKeys();
     await createSearchOnlyKeyAndSave();
     await mAddDocs(files);
-    await new Promise(r => setTimeout(r, 30000));
+    await new Promise(r => setTimeout(r, 10000));
     await mPruneIndex();
     process.exit(0);
   } catch (err) {
@@ -223,7 +270,7 @@ async function getRequest(url, user, path) {
   }
 }
 
-// Main function to pull inventory and save to JSON files
+// Pull inventory and save to JSON files
 export async function inventoryDump() {
   let mainConfig;
   try {

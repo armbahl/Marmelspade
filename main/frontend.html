@@ -8,24 +8,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
     <style>
-      /* instant-meilisearch CSS */
-      body{
+      body {
         background: #000000;
         font-family: 'Share Tech Mono', 'Open Sans', sans-serif;
       }
 
-      .wrapper{
+      .wrapper {
         width: 95%;
         top: 10%;
         margin-left: auto;
         margin-right: auto;
         padding: 100px 0;
-
       }
 
-      /* #### Tablets Portrait or Landscape #### */
-      @media screen and (min-device-width: 768px) and (max-device-width: 1024px){
-        .wrapper{
+      @media screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+        .wrapper {
           top: 10%;
           width: 50%;
           left: 50%;
@@ -34,9 +31,8 @@
         }
       }
 
-      /* #### Desktops #### */
-      @media screen and (min-width: 1024px){
-        .wrapper{
+      @media screen and (min-width: 1024px) {
+        .wrapper {
           top: 10%;
           width: 75%;
           left: 50%;
@@ -45,9 +41,8 @@
         }
       }
 
-      /* #### Desktops #### */
-      @media screen and (min-width: 1920px){
-        .wrapper{
+      @media screen and (min-width: 1920px) {
+        .wrapper {
           top: 10%;
           width: 50%;
           left: 50%;
@@ -56,29 +51,10 @@
         }
       }
 
-      .search {
-        width: 100%;
-        position: relative;
-        display: flex;
-        margin: 0 auto;
-      }
-
-      #searchbox {
-        width: 100%;
-        display: flex;
-        position: relative;
-        margin: 0 auto;
-      }
-
-      .ais-SearchBox {
-        width: 100%;
-        display: flex;
-      }
-
+      .ais-SearchBox,
       .ais-SearchBox-form {
         width: 100%;
         display: flex;
-        justify-content: flex-start;
       }
 
       .ais-SearchBox-input {
@@ -93,8 +69,8 @@
         color: #bbbbbb;
       }
 
-      .ais-SearchBox-input:focus{
-        color:#ffffff;
+      .ais-SearchBox-input:focus {
+        color: #ffffff;
       }
 
       .ais-SearchBox-submit {
@@ -103,7 +79,7 @@
         border: 1px solid #ff00ff;
         background: #ff00ff;
         text-align: center;
-        color: #fff !important;
+        color: #ffffff !important;
         border-radius: 0 5px 5px 0;
         cursor: pointer;
         font-size: 20px;
@@ -127,8 +103,6 @@
       }
 
       .ais-SearchBox-reset {
-        -webkit-appearance: none;
-        -moz-appearance: none;
         appearance: none;
         position: absolute;
         z-index: 1;
@@ -137,16 +111,9 @@
         top: 50%;
         transform: translateY(-50%);
         padding: 0;
-        overflow: visible;
-        font: inherit;
-        line-height: normal;
-        color: inherit;
         background: none;
         border: 0;
         cursor: pointer;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
         user-select: none;
         right: 5px;
       }
@@ -157,7 +124,6 @@
         width: 12px;
         height: 12px;
         top: 50%;
-        -webkit-transform: translateX(-50%) translateY(-50%);
         transform: translateX(-50%) translateY(-50%);
         cursor: pointer;
         fill: #ffffff;
@@ -167,20 +133,6 @@
         fill: #000000;
       }
 
-      .hits {
-        width: 100%;
-        position: relative;
-        display: flex;
-        margin: 0 auto;
-      }
-
-      .ais-Hits {
-        width: 100%;
-        display: flex;
-        position: relative;
-        margin: 0 auto;
-      }
-
       .ais-Hits--empty {
         box-sizing: border-box;
         background-color: #222222;
@@ -188,26 +140,22 @@
         padding: 1rem;
         margin: 0;
         margin-top: 5px;
-        color:#ffffff;
+        color: #ffffff;
+        border-radius: 3px;
       }
 
       .ais-Hits .ais-Hits-list {
-        display: block;
-        position: absolute;
-        top: 5px;
-        left: 0;
-        right: 0;
-        z-index: 10;
-        padding: 0;
-        margin: 0;
-      }
-
-      .ais-Hits-list, .ais-Hits--empty {
-        border-radius: 3px;
-        border-color: #ffffff;
-        background: transparent;
-        background-color: #222222;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+          display: block;
+          position: absolute;
+          top: 5px;
+          left: 0;
+          right: 0;
+          z-index: 10;
+          padding: 0;
+          margin: 0;
+          border-radius: 3px;
+          background: transparent;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
       }
 
       .ais-Hits .ais-Hits-list .ais-Hits-item {
@@ -220,7 +168,6 @@
         width: 100%;
         color: #ffffff;
         font-weight: 500;
-        text-shadow: 0 0 transparent;
         border: 1px solid transparent;
         border-radius: 3px;
         margin-bottom: 8px;
@@ -235,33 +182,19 @@
         background-color: #00ffff;
         color: #000000;
       }
-      :-moz-placeholder {
-          color: #a7aabc;
-          font-weight: 200;
-      }
 
-      ::-webkit-input-placeholder {
-          color: #a7aabc;
-          font-weight: 200;
-      }
-
-      /* Pagination styles */
       .ais-Pagination {
         display: flex;
         justify-content: center;
         margin-top: 4px;
         margin-bottom: 4px;
-        gap: 0;
       }
+
       .ais-Pagination-list {
         display: flex;
         padding: 0;
         margin: 0;
         gap: 4px;
-        list-style: none;
-      }
-
-      .ais-Pagination-item {
         list-style: none;
       }
 
@@ -281,17 +214,16 @@
       .ais-Pagination-item--selected .ais-Pagination-link,
       .ais-Pagination-link:hover {
         background: #00ffff;
-        color: #000;
+        color: #000000;
       }
 
       .ais-Pagination-item--disabled .ais-Pagination-link {
-        color: #888;
-        border-color: #444;
+        color: #888888;
+        border-color: #444444;
         cursor: not-allowed;
-        background: #222;
+        background: #222222;
       }
-      
-      /* Custom CSS */
+
       h1 {
         display: block;
         font-size: 4em;
@@ -300,7 +232,6 @@
         margin-inline-start: 0;
         margin-inline-end: 0;
         font-weight: bold;
-        unicode-bidi: isolate;
         color: #ffffff;
       }
 
@@ -312,21 +243,20 @@
         margin-inline-start: 0;
         margin-inline-end: 0;
         font-weight: normal;
-        unicode-bidi: isolate;
         color: #ffffff;
       }
 
       h3 {
         text-align: center;
         display: block;
-        font-size: 1.5em;
+        font-size: 1.25em;
         margin-block-start: 0;
         margin-block-end: 1%;
         margin-inline-start: 0;
         margin-inline-end: 0;
         font-weight: normal;
-        unicode-bidi: isolate;
         color: #ffffff;
+        text-shadow: 0 0 transparent;
       }
 
       p {
@@ -337,6 +267,7 @@
       }
 
       .hit-name {
+        background: #222222;
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
@@ -352,33 +283,30 @@
         padding: 2px;
       }
 
-      button {
-        font-family: 'Share Tech Mono', 'Open Sans', sans-serif;
-        font-size: 100%;
+      .copyField {
         width: 95%;
-        height: auto;
-        max-height: 64px;
-        appearance: auto;
-        text-rendering: auto;
-        color: #ffffff;
-        letter-spacing: normal;
-        word-spacing: normal;
-        line-height: normal;
-        text-transform: none;
-        text-indent: 0px;
-        text-shadow: none;
+        margin: 0 auto 4px auto;
         display: block;
+        background: #111111;
+        color: #ffffff;
+        border: 1px solid #00ffff;
+        border-radius: 3px;
+        padding: 4px;
+        font-family: inherit;
+        font-size: 58%;
         text-align: center;
-        cursor: default;
-        box-sizing: border-box;
-        margin: 0 auto 0 auto;
-        padding-block: 1px;
-        padding-inline: 6px;
-        border-width: .1vw;
-        border-style: groove;
-        border-color: #ffffff;
-        border-image: initial;
-        background: #000000;
+      }
+
+      .copyField:focus {
+        border: 1px solid #ff00ff;
+        background: #00ffff;
+        color: #000000;
+        outline: none;
+      }
+
+      .copyField::selection {
+        background: transparent;
+        color: #000;
       }
 
       .lineMain {
@@ -403,12 +331,10 @@
     <div class="wrapper">
       <h1 style="text-align: center; padding-top: 8vw">Marmelspade</h1>
       <h2 style="text-align: center;">Creator Jam database search engine</h2>
-      <p style="margin-bottom: 4px">Made by ARandomMeatball for <a href="https://creatorjam.com/">Creator Jam</a>
+      <p style="margin-bottom: 4px; margin-top: 4px;">Made by ARandomMeatball for <a href="https://creatorjam.com/">Creator Jam</a>
         | <a href= "https://github.com/armbahl/Marmelspade/blob/main/LICENSE">MIT License</a>
         | <a href="https://github.com/armbahl/Marmelspade">Github</a></p>
       <hr class="lineMain"/>
-      <p style="padding-bottom: 0px;">Uses <a href="https://nodejs.org/">Node.js</a> and <a href="https://www.meilisearch.com/">Meilisearch</a></p>
-      <hr class="lineMain" style="width: 85%;">
       <div id="sortBy"></div>
       <div id="pagination"></div>
       <div id="searchbox" focus></div>
@@ -421,8 +347,8 @@
     const search = instantsearch({
       indexName: "creatorjam",
       searchClient: instantMeiliSearch(
-        "__HOST_URL__", // Host URL
-        "__API_KEY__" // Public API Key
+        "__HOST_URL__",
+        "__API_KEY__"
       ).searchClient
       });
       search.addWidgets([
@@ -439,11 +365,11 @@
                   <img src="{{#helpers.highlight}}{"attribute": "thumbnailUrl"}{{/helpers.highlight}}" class="hit-icon"/>
                 </div>
                 <div>
-                  <h3 style="font-size: clamp(.5em, 1vw, 1em);">{{#helpers.highlight}}{ "attribute": "name" }{{/helpers.highlight}}</h3>
-                  <div style="font-size: .75em; text-align: center; color: #aaaaaa; margin-bottom: 4px;">
+                  <h3>{{#helpers.highlight}}{ "attribute": "name" }{{/helpers.highlight}}</h3>
+                  <div style="font-size: .75em; text-align: center; color: #aaaaaa; margin-bottom: 4px; text-shadow: 0 0 transparent;">
                     {{#helpers.highlight}}{ "attribute": "path" }{{/helpers.highlight}}
                   </div>
-                  <input type="text" class="copyField" value="{{ assetUri }}" readonly style="width: 95%; margin: 0 auto 4px auto; display: block; background: #111; color: #fff; border: 1px solid #00ffff; border-radius: 3px; padding: 4px; font-family: inherit;"/>
+                  <input type="text" class="copyField" value="{{ assetUri }}" readonly/>
                 </div>
               </div>
             `
