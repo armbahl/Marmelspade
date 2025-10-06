@@ -18,7 +18,7 @@
         top: 10%;
         margin-left: auto;
         margin-right: auto;
-        padding: 100px 0;
+        padding: 20px 0;
       }
 
       @media screen and (min-device-width: 768px) and (max-device-width: 1024px) {
@@ -332,6 +332,29 @@
       a:hover {
         color: #ff00ff;
       }
+
+      #backToTopBtn {
+        position: fixed;
+        bottom: 32px;
+        right: 32px;
+        z-index: 100;
+        background: #ff00ff;
+        color: #fff;
+        border: #00ffff solid;
+        border-width: 2px;
+        border-radius: 40px;
+        padding: 20px 20px;
+        font-size: 2em;
+        cursor: pointer;
+        transition: opacity 0.4s;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+      #backToTopBtn.visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
     </style>
   </head>
   <body>
@@ -343,10 +366,12 @@
         | <a href="https://github.com/armbahl/Marmelspade">Github</a></p>
       <hr class="lineMain"/>
       <div id="sortBy"></div>
+      <div id="custom-tag-filters" style="margin: 4px 0; color: #fff; display: flex; justify-content: center;"></div>
       <div id="pagination"></div>
       <div id="searchbox" focus></div>
       <div id="hits"></div>
     </div>
+    <button id="backToTopBtn">↑</button>
   </body>
   <script src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
@@ -390,16 +415,63 @@
           }
         }),
         instantsearch.widgets.pagination({
-          container: '#pagination'
+          container: '#pagination',
+          padding: 1,
+          showFirst: true,
+          showLast: false,
+          showNext: true,
+          showPrevious: true
         })
       ]);
-      search.start();
+    search.start();
+      
+      // Custom Tag Filters
+    const availableTags = [
+      { value: "common_avatar", label: "Avatar" },
+      { value: "world_orb", label: "World Orb" }
+    ];
 
+    const filterContainer = document.getElementById('custom-tag-filters');
+
+    // Render checkboxes
+    filterContainer.innerHTML = '<p style="margin-right: 7px;">Filter by tag:</p>' + availableTags.map(tag =>
+      `<label style="margin-right:12px;">
+        <input type="checkbox" value="${tag.value}" class="tag-filter-checkbox"> ${tag.label}
+      </label>`
+    ).join('');
+
+    // Listen for changes and update filters
+    filterContainer.addEventListener('change', function() {
+      const checked = Array.from(document.querySelectorAll('.tag-filter-checkbox:checked')).map(cb => cb.value);
+      if (checked.length === 0) {
+        search.helper.setQueryParameter('filters', '').search();
+      } else {
+        // Build MeiliSearch filter string
+        const filterString = checked.map(tag => `tags = "${tag}"`).join(' OR ');
+        search.helper.setQueryParameter('filters', filterString).search();
+      }
+    });
+      
     document.getElementById('hits').addEventListener('click', function(e) {
       if (e.target && e.target.classList.contains('copyField')) {
         e.target.select();
         e.target.setSelectionRange(0, 99999); // For mobile devices
       }
+    });
+
+    // Show/hide the button on scroll
+    window.addEventListener('scroll', function() {
+      const btn = document.getElementById('backToTopBtn');
+      if (window.scrollY > 20) {
+        btn.classList.add('visible');
+      } else {
+        btn.classList.remove('visible');
+      }
+    });
+
+    // Scroll to top on click
+    document.getElementById('backToTopBtn').addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   </script>
 </html>

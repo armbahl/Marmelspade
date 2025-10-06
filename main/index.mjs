@@ -113,7 +113,7 @@ async function mMakeIndex() {
     await new Promise(r => setTimeout(r, 5000));
     const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
     console.log(res);
-    await client.index('creatorjam').updateFilterableAttributes(['recordType']);
+    await client.index('creatorjam').updateFilterableAttributes(['recordType', 'tags']);
     await client.index('creatorjam').updateSortableAttributes(['name']);
   } catch (err) {
     console.error('Error creating Meilisearch index:', err.message);

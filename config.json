@@ -2,11 +2,11 @@
     "inventoryPaths": {
         "0": {
             "id": "U-EXAMPLE-USER",
-            "directory": "Inventory\\EXAMPLE\\DIRECTORY"
+            "directory": "Inventory\\EXAMPLE DIRECTORY\\EXAMPLE PUBLIC FOLDER"
         },
         "1": {
             "id": "G-EXAMPLE-GROUP",
-            "directory": "Inventory\\EXAMPLE\\DIRECTORY"
+            "directory": "Inventory\\EXAMPLE PUBLIC FOLDER"
         }
     },
     "serverInfo": {
