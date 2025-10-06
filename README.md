@@ -1,5 +1,4 @@
 # Marmelspade
----
 ### How to use:
 1. Make sure you have [Node.js](https://nodejs.org/en/download) and [Meilisearch](https://www.meilisearch.com/docs/learn/self_hosted/getting_started_with_self_hosted_meilisearch) installed on your machine.
 2. Open "config.json," input the inventory paths you would like to pull from, and set the server info so that it matches your Meilisearch settings.
