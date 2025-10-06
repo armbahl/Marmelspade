@@ -2,7 +2,6 @@ import http from 'http';
 import fs from 'fs';
 import { request as httpRequest } from 'http';
 import { MeiliSearch } from 'meilisearch';
-import fetch from 'node-fetch'; // Import fetch for Node.js
 
 const CONFIGPATH = "./config.json"; // Config file path
 
