@@ -12,7 +12,7 @@
       * Starts the Nodejs server.
 
 
-You can now connect to your frontend and start searching!
+You can now connect to your server and start searching!
 ## Licenses
 * Marmelspade
   * [MIT LICENSE](https://github.com/armbahl/Marmelspade/blob/main/)
