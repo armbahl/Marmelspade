@@ -10,30 +10,51 @@ try {
   process.exit(1);
 }
 
-const FRONTENDPATH = './main/frontend.html';
+const FRONTEND_LOCAL_PATH = './main/frontend.html'; // Local path to frontend HTML file
+const FRONTEND_REMOTE_URL = 'https://www.examplesite.none/frontend.html'; // Remote URL for frontend HTML file
 const HOST = config.serverInfo.host;
 const PORT = config.serverInfo.port;
 const SEARCHKEY = config.serverInfo.searchKey;
 const HOST_URL = `${HOST}:${PORT}/meili`;
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   try {
     if (req.url === '/' || req.url === '/frontend.html') {
-      fs.readFile(FRONTENDPATH, 'utf-8', (err, data) => {
-        if (err) {
-          console.error('Error reading frontend file:', err.message);
+      if (config.serverInfo.frontendRemote) {
+        // Serve frontend from remote URL
+        try {
+          const response = await fetch(FRONTEND_REMOTE_URL);
+          if (!response.ok) throw new Error('Failed to fetch remote frontend');
+          let data = await response.text();
+          data = data.replace(/__HOST_URL__/g, HOST_URL)
+                     .replace(/__API_KEY__/g, SEARCHKEY);
+
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(data);
+        } catch (err) {
+          console.error('Error fetching remote frontend:', err.message);
           res.writeHead(500, { 'Content-Type': 'text/plain' });
           res.end('500 Internal Server Error');
-          return;
         }
-        // Replace placeholders with actual values
-        data = data.replace(/__HOST_URL__/g, HOST_URL)
-                   .replace(/__API_KEY__/g, SEARCHKEY);
+      }
+      else {
+        // Serve frontend from local file
+        fs.readFile(FRONTEND_LOCAL_PATH, 'utf-8', (err, data) => {
+          if (err) {
+            console.error('Error reading frontend file:', err.message);
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('500 Internal Server Error');
+            return;
+          }
+          data = data.replace(/__HOST_URL__/g, HOST_URL)
+                     .replace(/__API_KEY__/g, SEARCHKEY);
 
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(data);
-      });
-    } else if (req.url.startsWith('/meili')) {
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(data);
+        });
+      }
+    }
+    else if (req.url.startsWith('/meili')) {
       // Proxy to Meilisearch
       let body = '';
       req.on('data', chunk => { body += chunk; });
@@ -50,9 +71,7 @@ const server = http.createServer((req, res) => {
             }
           };
           const proxy = httpRequest(options, proxyRes => {
-            // Clone headers and overwrite Access-Control-Allow-Origin
             const headers = { ...proxyRes.headers };
-            // Remove any existing Access-Control-Allow-Origin header
             delete headers['access-control-allow-origin'];
             headers['Access-Control-Allow-Origin'] = '*';
 
@@ -77,7 +96,8 @@ const server = http.createServer((req, res) => {
         res.writeHead(400, { 'Content-Type': 'text/plain' });
         res.end('400 Bad Request');
       });
-    } else {
+    }
+    else {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('404 Not Found');
     }
