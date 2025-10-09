@@ -14,7 +14,7 @@
         "port": 8080,
         "meiliPort": 7700,
         "masterKey": "ChangeMe",
-        "frontendRemote": true,
+        "frontendRemote": false,
         "frontendUrl": "http://www.example.falseurl",
         "searchKey": "PLACEHOLDER"
     }
