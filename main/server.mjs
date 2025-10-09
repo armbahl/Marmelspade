@@ -11,7 +11,7 @@ try {
 }
 
 const FRONTEND_LOCAL_PATH = './main/frontend.html'; // Local path to frontend HTML file
-const FRONTEND_REMOTE_URL = 'https://www.examplesite.none/frontend.html'; // Remote URL for frontend HTML file
+const FRONTEND_REMOTE_URL = config.serverInfo.frontendUrl; // Pulls url from config.json
 const HOST = config.serverInfo.host;
 const PORT = config.serverInfo.port;
 const SEARCHKEY = config.serverInfo.searchKey;
