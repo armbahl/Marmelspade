@@ -2,11 +2,11 @@
     "inventoryPaths": {
         "0": {
             "id": "U-EXAMPLE-USER",
-            "directory": "Inventory\\EXAMPLE DIRECTORY\\EXAMPLE PUBLIC FOLDER"
+            "directory": "Inventory\\EXAMPLE\\DIRECTORY"
         },
         "1": {
             "id": "G-EXAMPLE-GROUP",
-            "directory": "Inventory\\EXAMPLE PUBLIC FOLDER"
+            "directory": "Inventory\\EXAMPLE\\DIRECTORY"
         }
     },
     "serverInfo": {
@@ -14,8 +14,9 @@
         "port": 8080,
         "meiliPort": 7700,
         "masterKey": "ChangeMe",
+        "indexName": "awesomeindex",
         "frontendRemote": false,
-        "frontendUrl": "http://www.example.falseurl",
+        "frontendUrl": "./main/frontend.html",
         "searchKey": "PLACEHOLDER"
     }
 }

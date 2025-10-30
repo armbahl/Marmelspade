@@ -1,134 +1,231 @@
-import http from 'http';
 import fs from 'fs';
-import { request as httpRequest } from 'http';
 import { MeiliSearch } from 'meilisearch';
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 
-const CONFIGPATH = "./config.json"; // Config file path
-
-// Parse config file
+// Parse config
 let config;
 try {
-  config = JSON.parse(fs.readFileSync(CONFIGPATH));
-} catch (err) {
+  config = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
+}
+
+// Error handling
+catch (err) {
   console.error('Failed to read or parse config.json:', err.message);
   process.exit(1);
 }
 
-const HOST = config.serverInfo.host; // Server host
-const PORT = config.serverInfo.port; // Server port
-const MEILI_PORT = config.serverInfo.meiliPort; // Meilisearch port
-const RESO_APIURL = "https://api.resonite.com"; // Base API URL
-const RESO_ASSETURL = "https://assets.resonite.com"; // Base Asset URL
+// Constants
+const CONFIGPATH = "./config.json";
+const HOST = config.serverInfo?.host ?? 'localhost';
+const PORT = Number(config.serverInfo?.port ?? 8080);
+const MEILI_PORT = Number(config.serverInfo?.meiliPort ?? 7700);
+const RESO_APIURL = "https://api.resonite.com";
+const RESO_ASSETURL = "https://assets.resonite.com";
 
-// Nodejs server to serve frontend and proxy Meilisearch requests
-const server = http.createServer((req, res) => {
-  if (req.url === '/' || req.url === '/frontend.html') {
-    fs.readFile('./main/frontend.html', (err, data) => {
-      if (err) {
-        console.error('Error reading frontend.html:', err.message);
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('500 Internal Server Error');
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.end(data);
-    });
-  }
-  // Proxy to Meilisearch
-  else if (req.url.startsWith('/meili')) {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
-      try {
-        const options = {
-          hostname: HOST,
-          port: MEILI_PORT,
-          path: req.url.slice(6) || '/', // Remove '/meili' prefix
-          method: req.method,
-          headers: {
-            ...req.headers,
-            'host': `${HOST}:${MEILI_PORT}`,
-          }
-        };
-        const proxy = httpRequest(options, proxyRes => {
-          const headers = { ...proxyRes.headers }; // Clone headers and overwrite Access-Control-Allow-Origin
-          delete headers['access-control-allow-origin']; // Remove any existing Access-Control-Allow-Origin header
-          headers['Access-Control-Allow-Origin'] = '*';
-
-          res.writeHead(proxyRes.statusCode, headers);
-          proxyRes.pipe(res, { end: true });
-        });
-        proxy.on('error', (err) => {
-          console.error('Proxy error:', err.message);
-          res.writeHead(502, { 'Content-Type': 'text/plain' });
-          res.end('Bad Gateway');
-        });
-        if (body) proxy.write(body);
-        proxy.end();
-      } catch (err) {
-        console.error('Proxy request error:', err.message);
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('500 Internal Server Error');
-      }
-    });
-    req.on('error', (err) => {
-      console.error('Request error:', err.message);
-      res.writeHead(400, { 'Content-Type': 'text/plain' });
-      res.end('400 Bad Request');
-    });
-  }
-  // Error 404
-  else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('404 Not Found');
-  }
-});
-
-// Start server
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}/`);
-});
-
-server.on('error', (err) => {
-  console.error('Server error:', err.message);
-});
-
-// Meilisearch client setup
+// Create Meili client
 let client;
 try {
   client = new MeiliSearch({
     host: `http://${HOST}:${MEILI_PORT}`,
-    apiKey: config.serverInfo.masterKey
+    apiKey: config.serverInfo?.masterKey
   });
-} catch (err) {
+}
+
+// Error handling
+catch (err) {
   console.error('Failed to initialize MeiliSearch client:', err.message);
   process.exit(1);
 }
 
+// Express app
+const app = express();
+
+// Security and parsing middleware
+app.use(helmet());
+app.use(cors({ origin: '*' }));
+app.use(express.json({ limit: '1mb' }));
+
+// Rate limiter
+const limiter = rateLimit({
+  windowMs: 60_000,
+  max: 128,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use(limiter);
+
+// Serve frontend from local file
+app.get(['/', '/frontend.html'], (req, res) => {
+  try {
+    const html = fs.readFileSync('./main/frontend.html', 'utf-8')
+                   .replace(/__HOST_URL__/g, `http://${HOST}:${PORT}`)
+                   .replace(/__API_KEY__/g, '');
+    res.type('html').send(html);
+  }
+  
+  // Error handling
+  catch (err) {
+    console.error('Frontend serve error:', err.message);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Public search endpoint
+app.post('/api/search', async (req, res) => {
+  const payload = req.body || {}; // Request payload
+  const indexName = typeof payload.index === 'string' ? payload.index : 'creatorjam'; // Main index
+  const q = typeof payload.q === 'string' ? payload.q : ''; // Search query
+
+  // Search options
+  const options = (payload.options && typeof payload.options === 'object' && payload.options !== null) ? payload.options : {};
+
+  // Validate options
+  if (Array.isArray(options) || typeof options === 'function') {
+    return res.status(400).send('Invalid search options');
+  }
+
+  // Perform search
+  try {
+    const result = await client.index(indexName).search(q, options);
+    res.json(result);
+  }
+  
+  // Error handling
+  catch (err) {
+    console.error('Search error:', err.message);
+    res.status(502).send('Search backend error');
+  }
+});
+
+// Not found 404
+app.use((req, res) => res.status(404).send('Not Found'));
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unexpected server error:', err?.message || err);
+  res.status(500).send('Internal Server Error');
+});
+
+// Start Express server
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/`);
+});
+
 // Create Meilisearch index
 async function mMakeIndex() {
   try {
-    await client.deleteIndex('creatorjam').catch(() => { });
-    await new Promise(r => setTimeout(r, 5000));
-    const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
-    console.log(res);
-    await client.index('creatorjam').updateFilterableAttributes(['recordType', 'tags']);
-    await client.index('creatorjam').updateSortableAttributes(['name']);
-  } catch (err) {
-    console.error('Error creating Meilisearch index:', err.message);
+    // Check if index exists
+    try {
+      await client.getIndex('creatorjam');
+
+      //// DELETE BLOCK IF TRYING TO KEEP RECORD IDS
+      await client.deleteIndex('creatorjam');
+      const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
+      console.log('Created index:', res);
+      await client.index('creatorjam').updateFilterableAttributes(['recordType', 'tags']);
+      await client.index('creatorjam').updateSortableAttributes(['name']);
+      //// END BLOCK
+    }
+    
+    // Create if it does not exist
+    catch (err) {
+      const notFound =
+        err?.errorCode === 'index_not_found' ||
+        (typeof err.message === 'string' && err.message.toLowerCase().includes('not found'));
+
+      if (notFound) {
+        const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
+        console.log('Created index:', res);
+        await client.index('creatorjam').updateFilterableAttributes(['recordType', 'tags']);
+        await client.index('creatorjam').updateSortableAttributes(['name']);
+      }
+      
+      // Error handling
+      else {
+        throw err;
+      }
+    }
+  }
+  // Error handling
+  catch (err) {
+    console.error('Error ensuring Meilisearch index:', err.message);
     throw err;
   }
 }
 
+// Pull inventory and return JSON batches
+async function inventoryDump() {
+  let mainConfig;
+  try {
+    mainConfig = JSON.parse(fs.readFileSync(CONFIGPATH)); // Loads config.json
+  }
+  
+  // Error handling
+  catch (err) {
+    console.error('Failed to read or parse config.json in inventoryDump:', err.message);
+    throw err;
+  }
+
+  let pulledDirs = []; // Directories to pull
+  let currentData; // Current driectory data
+  let fileNumber = 0; // File counter
+  let assetUrl; // Asset URL
+  const batches = []; // Loads JSON into array
+
+  // Initializes target directories from config.json
+  for (let initDirs in mainConfig["inventoryPaths"]) {
+    pulledDirs.length = 0;
+    pulledDirs.push(mainConfig["inventoryPaths"][initDirs]["directory"]);
+
+    // Pulls directories and loads into memory
+    while (pulledDirs.length > 0) {
+      try {
+        currentData = await getRequest(RESO_APIURL, mainConfig["inventoryPaths"][initDirs]["id"], pulledDirs[0]);
+        console.log(pulledDirs[0]);
+
+        for (let i in currentData) {
+          if (currentData[i]["recordType"] === "directory") {
+            pulledDirs.push(currentData[i]["path"] + "\\" + currentData[i]["name"]);
+          }
+          else if (currentData[i]["recordType"] === "object") {
+            assetUrl = currentData[i]["thumbnailUri"];
+            assetUrl = assetUrl.replace('resdb:///', `${RESO_ASSETURL}/`);
+            assetUrl = assetUrl.replace('.webp', '');
+            Object.assign(currentData[i], { "thumbnailUrl": assetUrl });
+          }
+        }
+
+        batches.push(currentData);
+        fileNumber += 1;
+        pulledDirs.shift();
+      }
+
+      // Error handling
+      catch (err) {
+        console.error('Error processing directory:', pulledDirs[0], err.message);
+        pulledDirs.shift(); // Skips directory and continues
+      }
+    }
+  }
+
+  return batches;
+}
+
 // Add documents to Meilisearch index
-async function mAddDocs(files) {
-  for (let i = 0; i < files.length; i++) {
+async function mAddDocs(batches) {
+  for (let i = 0; i < batches.length; i++) {
     try {
-      let parsedFile = JSON.parse(fs.readFileSync(`./_RAW_JSON/${files[i]}`, 'utf8'));
-      let res = await client.index('creatorjam').addDocuments(parsedFile, { primaryKey: 'id' });
+      const batch = batches[i];
+      let res = await client.index('creatorjam').addDocuments(batch, { primaryKey: 'id' });
       console.log(res);
-    } catch (err) {
-      console.error(`Error adding documents from file ${files[i]}:`, err.message);
+    }
+    
+    // Error handling
+    catch (err) {
+      console.error(`Error adding documents from batch ${i}:`, err.message);
       throw err;
     }
   }
@@ -141,7 +238,10 @@ async function mPruneIndex() {
       filter: 'recordType = "link" OR recordType = "directory"'
     });
     console.log(res);
-  } catch (err) {
+  }
+  
+  // Error handling
+  catch (err) {
     console.error('Error pruning Meilisearch index:', err.message);
     throw err;
   }
@@ -157,6 +257,8 @@ async function deleteAllSearchOnlyKeys() {
         'Authorization': `Bearer ${config.serverInfo.masterKey}`
       }
     });
+
+    // Check response
     if (!response.ok) throw new Error(`Failed to fetch keys: ${response.statusText}`);
     const data = await response.json();
 
@@ -175,16 +277,26 @@ async function deleteAllSearchOnlyKeys() {
           'Authorization': `Bearer ${config.serverInfo.masterKey}`
         }
       });
+
+      // Log deletion result
       if (delRes.ok) {
         console.log(`Deleted search-only key: ${key.uid}`);
-      } else {
+      }
+      
+      // Error handling
+      else {
         console.error(`Failed to delete key ${key.uid}: ${delRes.statusText}`);
       }
     }
+
+    // Print if no search-only keys found
     if (searchOnlyKeys.length === 0) {
       console.log('No search-only keys found.');
     }
-  } catch (err) {
+  }
+  
+  // Error handling
+  catch (err) {
     console.error('Error deleting search-only keys:', err.message);
   }
 }
@@ -192,6 +304,7 @@ async function deleteAllSearchOnlyKeys() {
 // Create a search-only key in Meilisearch and save to config.json
 async function createSearchOnlyKeyAndSave() {
   try {
+    // Create search-only key
     const response = await fetch(`http://${HOST}:${MEILI_PORT}/keys`, {
       method: 'POST',
       headers: {
@@ -206,43 +319,56 @@ async function createSearchOnlyKeyAndSave() {
       })
     });
 
+    // Check response
     if (!response.ok) {
       throw new Error(`Failed to create key: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log('Search-only key:', data.key);
+    const data = await response.json(); // Created key data
+    console.log('Search-only key:', data.key); // Print created key
 
     // Ensure "searchKey" exists in config
     if (!('searchKey' in config.serverInfo)) {
       config.serverInfo.searchKey = data.key;
-    } else {
+    }
+    
+    // Update existing "searchKey"
+    else {
       config.serverInfo.searchKey = data.key;
     }
 
+    // Write updated config back to config.json
     try {
       fs.writeFileSync(CONFIGPATH, JSON.stringify(config, null, 4));
-    } catch (err) {
+    }
+    
+    //  Error handling
+    catch (err) {
       console.error('Failed to write config.json:', err.message);
       throw err;
     }
-  } catch (err) {
+  }
+  
+  // Error handling
+  catch (err) {
     console.error('Error creating search-only key:', err.message);
     throw err;
   }
 }
 
 // Create index, add documents, and prune index
-async function indexData(files) {
+async function indexData(batches) {
   try {
-    await mMakeIndex();
-    await deleteAllSearchOnlyKeys();
-    await createSearchOnlyKeyAndSave();
-    await mAddDocs(files);
-    await new Promise(r => setTimeout(r, 10000));
-    await mPruneIndex();
-    process.exit(0);
-  } catch (err) {
+    await mMakeIndex(); // Create Meilisearch index
+    await deleteAllSearchOnlyKeys(); // Delete existing search-only keys
+    await createSearchOnlyKeyAndSave(); // Create new search-only key
+    await mAddDocs(batches); // Add documents to index
+    await new Promise(r => setTimeout(r, 10000)); // Wait for indexing
+    await mPruneIndex(); // Prune index
+    process.exit(0); // Exit successfully
+  }
+   // Error handling
+  catch (err) {
     console.error('Error during indexing data:', err.message);
     process.exit(1);
   }
@@ -251,97 +377,42 @@ async function indexData(files) {
 // GET requests
 async function getRequest(url, user, path) {
   try {
-    const query = encodeURIComponent(path);
-    const urlWithQuery = `${url}/users/${user}/records?path=${query}`;
-    const response = await fetch(urlWithQuery, { method: 'GET' });
-    const contentType = response.headers.get('content-type');
+    const query = encodeURIComponent(path); // Encode path
+    const urlWithQuery = `${url}/users/${user}/records?path=${query}`; // Full URL
+    const response = await fetch(urlWithQuery, { method: 'GET' }); // Fetch request
+    const contentType = response.headers.get('content-type'); // Content type
 
+    // Check response
     let data;
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
-    } else {
+    }
+    
+    // Non-JSON response
+    else {
       data = await response.text();
     }
+
     return data;
-  } catch (err) {
+  }
+  
+  // Error handling
+  catch (err) {
     console.error('Error in getRequest:', err.message);
     throw err;
-  }
-}
-
-// Pull inventory and save to JSON files
-export async function inventoryDump() {
-  let mainConfig;
-  try {
-    mainConfig = JSON.parse(fs.readFileSync(CONFIGPATH));
-  } catch (err) {
-    console.error('Failed to read or parse config.json in inventoryDump:', err.message);
-    throw err;
-  }
-
-  try {
-    if (!fs.existsSync('_RAW_JSON')) { fs.mkdirSync('_RAW_JSON'); }
-  } catch (err) {
-    console.error('Failed to create _RAW_JSON directory:', err.message);
-    throw err;
-  }
-
-  let pulledDirs = [];
-  let currentData;
-  let fileNumber = 0;
-  let assetUrl;
-
-  for (let initDirs in mainConfig["inventoryPaths"]) {
-    pulledDirs.length = 0;
-    pulledDirs.push(mainConfig["inventoryPaths"][initDirs]["directory"]);
-
-    while (pulledDirs.length > 0) {
-      try {
-        currentData = await getRequest(RESO_APIURL, mainConfig["inventoryPaths"][initDirs]["id"], pulledDirs[0]);
-        console.log(pulledDirs[0]);
-
-        for (let i in currentData) {
-          if (currentData[i]["recordType"] === "directory") {
-            pulledDirs.push(currentData[i]["path"] + "\\" + currentData[i]["name"]);
-          }
-          else if (currentData[i]["recordType"] === "object") {
-            assetUrl = currentData[i]["thumbnailUri"];
-            assetUrl = assetUrl.replace('resdb:///', `${RESO_ASSETURL}/`);
-            assetUrl = assetUrl.replace('.webp', '');
-            Object.assign(currentData[i], { "thumbnailUrl": assetUrl });
-          }
-        }
-
-        try {
-          fs.writeFileSync(`_RAW_JSON/${fileNumber}.json`, JSON.stringify(currentData, null, 2));
-        } catch (err) {
-          console.error(`Failed to write file _RAW_JSON/${fileNumber}.json:`, err.message);
-          throw err;
-        }
-        fileNumber += 1;
-        pulledDirs.shift();
-      } catch (err) {
-        console.error('Error processing directory:', pulledDirs[0], err.message);
-        pulledDirs.shift(); // Skip this directory and continue
-      }
-    }
   }
 }
 
 // Main Execution
 (async () => {
   try {
-    await inventoryDump();
-    let files;
-    try {
-      files = fs.readdirSync('./_RAW_JSON');
-    } catch (err) {
-      console.error('Failed to read _RAW_JSON directory:', err.message);
-      process.exit(1);
-    }
-    await indexData(files);
-  } catch (err) {
-    console.error('Fatal error in main execution:', err.message);
+    const batches = await inventoryDump(); // Pull inventory data
+    await indexData(batches); // Index data in Meilisearch
+  }
+  
+  // Error handling
+  catch (err) {
+    console.error('Error in main execution:', err.message);
     process.exit(1);
   }
 })();
