@@ -110,12 +110,29 @@ function pickResultFields(hit) {
   };
 }
 
+// Sanitize and validate query
+function sanitizeQuery(raw) {
+  if (!raw) return "";
+
+  // Coerce, trim, normalize, remove null/control chars, and limit length
+  let q = String(raw).trim();
+  try { q = q.normalize('NFC'); }
+  
+  catch (e) {} // Ignore normalization errors
+
+  // Remove control chars (except whitespace)
+  q = q.replace(/[\u0000-\u001F\u007F]/g, '');
+
+  // Enforce max length
+  const MAX_Q = 512;
+  if (q.length > MAX_Q) q = q.slice(0, MAX_Q);
+  return q;
+}
+
 // Search endpoint
 app.get("/search", async (req, res) => {
   try {
-    const q = String(req.query.q ?? "").trim();
-
-    // Validate query
+    const q = sanitizeQuery(req.query.q);
     if (!q) return res.status(400).json({ error: "Missing query parameter 'q'." });
 
     // Limit query length to prevent abuse
