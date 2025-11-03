@@ -121,13 +121,13 @@ async function mMakeIndex() {
     try {
       await client.getIndex('creatorjam');
 
-      //// DELETE BLOCK IF TRYING TO KEEP RECORD IDS
-      await client.deleteIndex('creatorjam');
-      const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
-      console.log('Created index:', res);
-      await client.index('creatorjam').updateFilterableAttributes(['recordType', 'tags']);
-      await client.index('creatorjam').updateSortableAttributes(['name']);
-      //// END BLOCK
+      //// DELETE SECTION IF TRYING TO KEEP RECORD IDS
+      /**/ await client.deleteIndex('creatorjam');
+      /**/ const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
+      /**/ console.log('Created index:', res);
+      /**/ await client.index('creatorjam').updateFilterableAttributes(['recordType', 'tags']);
+      /**/ await client.index('creatorjam').updateSortableAttributes(['name']);
+      //// END SECTION
     }
     
     // Create if it does not exist
@@ -136,6 +136,7 @@ async function mMakeIndex() {
         err?.errorCode === 'index_not_found' ||
         (typeof err.message === 'string' && err.message.toLowerCase().includes('not found'));
 
+      // Create index if not found
       if (notFound) {
         const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
         console.log('Created index:', res);
@@ -149,6 +150,7 @@ async function mMakeIndex() {
       }
     }
   }
+
   // Error handling
   catch (err) {
     console.error('Error ensuring Meilisearch index:', err.message);
@@ -187,9 +189,12 @@ async function inventoryDump() {
         console.log(pulledDirs[0]);
 
         for (let i in currentData) {
+          // Append directories to pull list
           if (currentData[i]["recordType"] === "directory") {
             pulledDirs.push(currentData[i]["path"] + "\\" + currentData[i]["name"]);
           }
+
+          // Add tumbnailUrl and resdb links to records
           else if (currentData[i]["recordType"] === "object") {
             assetUrl = currentData[i]["thumbnailUri"];
             assetUrl = assetUrl.replace('resdb:///', `${RESO_ASSETURL}/`);
@@ -198,9 +203,9 @@ async function inventoryDump() {
           }
         }
 
-        batches.push(currentData);
-        fileNumber += 1;
-        pulledDirs.shift();
+        batches.push(currentData); // Push current data to batches
+        fileNumber += 1; // Increment file counter
+        pulledDirs.shift(); // Remove processed directory
       }
 
       // Error handling

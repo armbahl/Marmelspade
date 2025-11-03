@@ -1,13 +1,12 @@
 {
   "name": "marmelspade",
-  "version": "0.9.1",
+  "version": "0.9.5",
   "description": "Resonite inventory indexing and searching!",
   "license": "MIT",
   "author": "Armbahl",
   "type": "module",
   "main": "./main/server.mjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "pull": "node ./main/index.mjs",
     "start": "node ./main/server.mjs"
   },

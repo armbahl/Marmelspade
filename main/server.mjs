@@ -29,7 +29,7 @@ const INDEX_NAME = String(indexFromConfig || "files").replace(/[^a-zA-Z0-9_-]/g,
 
 // Validate index name
 if (!INDEX_NAME) {
-  console.error("No valid index name provided (use --index=NAME, MEILI_INDEX env, or config.defaultIndex).");
+  console.error("No valid index name provided in config.json\n Please set \"serverInfo: indexName\" to the proper index.");
   process.exit(1);
 }
 console.log("Using Meili index:", INDEX_NAME);
@@ -100,7 +100,7 @@ app.get("/", (req, res) => {
 const meiliHost = `http://${host}:${meiliPort}`;
 const meili = new MeiliSearch({ host: meiliHost, apiKey: searchKey });
 
-// Safe mapping to required output fields
+// Outputs only whitelisted fields from search hits
 function pickResultFields(hit) {
   return {
     name: hit.name ?? null,
@@ -121,21 +121,16 @@ app.get("/search", async (req, res) => {
     // Limit query length to prevent abuse
     if (q.length > 512) return res.status(400).json({ error: "Query too long." });
 
-    // Use server-side configured index only
-    const indexName = INDEX_NAME;
+    const indexName = INDEX_NAME; // Use server-side configured index only
+    const PAGE_SIZE = 8; // Fixed page size enforced by server
+    const MAX_TOTAL_RESULTS = 1000; // Limit the maximum number of pageable results
 
-    // Fixed page size enforced by server (show 8 results per page)
-    const PAGE_SIZE = 8;
-
-    // Limit the maximum number of results a client can page through
-    const MAX_TOTAL_RESULTS = 1000;
-
-    let page = parseInt(String(req.query.page ?? "1"), 10);
+    let page = parseInt(String(req.query.page ?? "1"), 10); // Get page number from query
 
     // Validate page number
     if (Number.isNaN(page) || page < 1) page = 1;
-    const offset = (page - 1) * PAGE_SIZE;
 
+    const offset = (page - 1) * PAGE_SIZE; // Calculate offset
     const index = meili.index(indexName); // Get MeiliSearch index
 
     // Search options
