@@ -90,10 +90,9 @@ function renderHits(hits) {
       img.alt = h.name ?? 'thumbnail';
     }
     
-    // Placeholder for missing thumbnail
     else {
       img.alt = '';
-      img.style.background = '#f0f0f0';
+      img.style.background = '#000000';
     }
 
     const meta = document.createElement('div'); // Meta element
@@ -113,76 +112,119 @@ function renderHits(hits) {
     div.appendChild(img); // Append thumbnail to hit
     div.appendChild(meta); // Append meta to hit
 
+    // Copy Button
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy resdb';
+    btn.setAttribute('aria-label', 'Copy resdb link');
+
+    // Copy button click handler
+    btn.addEventListener('click', async () => {
+      const text = h.assetUri ?? h.thumbnailUri ?? h.thumbnailUrl ?? '';
+      if (!text) return;
+      try {
+        // Use Clipboard API if available
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        }
+        
+        // Fallback method
+        else {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+
+        const prev = btn.textContent;
+        btn.textContent = 'Copied';
+        btn.disabled = true;
+
+        setTimeout(() => {
+          btn.textContent = prev;
+          btn.disabled = false;
+        }, 1500);
+      }
+      
+      // Error handling
+      catch (err) {
+        console.error('copy failed', err);
+      }
+    });
+
+    div.appendChild(btn); // Append copy button
     hitsEl.appendChild(div); // Append hit to hits container
   }
 }
 
 // Render pagination controls container
 function renderPaginationFor(container) {
-  container.innerHTML = ''; // Clear previous pagination
-  const pageSize = Number(window.__serverPageSize || PAGE_SIZE); // Get page size
-
-  // Calculate total pages
+  container.innerHTML = '';
+  const pageSize = Number(window.__serverPageSize || PAGE_SIZE);
   const totalPages = Number(window.__serverTotalPages || Math.max(1, Math.ceil(totalHits / pageSize)));
 
-  const prev = document.createElement('button'); // Previous button
+  // First page button
+  const first = document.createElement('button');
+  first.className = 'page-btn';
+  first.textContent = '<<';
+  first.disabled = currentPage <= 1;
+  first.onclick = () => doSearch(1);
+  container.appendChild(first);
+
+  // Prev button
+  const prev = document.createElement('button');
   prev.className = 'page-btn';
-  prev.textContent = 'Prev';
-  prev.disabled = currentPage <= 1; // Disable if on first page
-  prev.onclick = () => doSearch(currentPage - 1); // Previous page action
-  container.appendChild(prev); // Append previous button
-
-  const start = Math.max(1, currentPage - 3);
-  const end = Math.min(totalPages, currentPage + 3);
-
-  // First page and leading ellipsis
-  if (start > 1) {
-    const first = pageButton(1); // First page button
-    container.appendChild(first); // Append first page button
-
-    // Ellipsis if needed
-    if (start > 2) {
-      const dots = document.createElement('span');
-      dots.textContent = '…';
-      dots.style.margin = '0 6px';
-      container.appendChild(dots);
-    }
-  }
+  prev.textContent = '<';
+  prev.disabled = currentPage <= 1;
+  prev.onclick = () => doSearch(currentPage - 1);
+  container.appendChild(prev);
 
   // Page number buttons
+  const windowSize = 3;
+  let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+  let end = start + windowSize - 1;
+  if (end > totalPages) {
+    end = totalPages;
+    start = Math.max(1, end - windowSize + 1);
+  }
+
+  // Render only the windowed numeric buttons
   for (let p = start; p <= end; p++) {
     const btn = pageButton(p);
     container.appendChild(btn);
   }
 
-  // Last page and trailing ellipsis
-  if (end < totalPages) {
-    if (end < totalPages - 1) {
-      const dots = document.createElement('span');
-      dots.textContent = '…';
-      dots.style.margin = '0 6px';
-      container.appendChild(dots);
-    }
-    const last = pageButton(totalPages); // Last page button
-    container.appendChild(last); // Append last page button
-  }
-
-  const next = document.createElement('button'); // Next button
+  // Next button
+  const next = document.createElement('button');
   next.className = 'page-btn';
-  next.textContent = 'Next';
-  next.disabled = currentPage >= totalPages; // Disable if on last page
-  next.onclick = () => doSearch(currentPage + 1); // Next page action
-  container.appendChild(next); // Append next button
+  next.textContent = '>';
+  next.disabled = currentPage >= totalPages;
+  next.onclick = () => doSearch(currentPage + 1);
+  container.appendChild(next);
 
-  const info = document.createElement('div'); // Page info element
+  // Last page button
+  const last = document.createElement('button');
+  last.className = 'page-btn';
+  last.textContent = '>>';
+  last.disabled = currentPage >= totalPages;
+  last.onclick = () => doSearch(totalPages);
+  container.appendChild(last);
+
+  // Page info
+  const info = document.createElement('div');
   info.className = 'page-info';
-  info.textContent = `Page ${currentPage} / ${totalPages} — ${totalHits} hits (page size ${pageSize})`;
-  container.appendChild(info); // Append info to container
+  info.textContent = `${totalPages} pages || ${totalHits} results`;
+  container.appendChild(info);
 }
 
-// Render pagination into all pagination containers
 function renderPagination() {
-  paginationEls.forEach(el => renderPaginationFor(el)); // Render for each container
+  // Render identical pagination into every pagination container
+  paginationEls.forEach(el => renderPaginationFor(el));
 }
 
 // Create a page button element
@@ -231,10 +273,5 @@ qInput.addEventListener('keydown', (e) => {
     qInput.value = q;
     currentQuery = q;
     doSearch(1);
-  }
-  
-  // If no 'q', show prompt
-  else {
-    hitsEl.innerHTML = '<p>Enter a query and press Search.</p>';
   }
 })();

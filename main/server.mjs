@@ -54,9 +54,9 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        connectSrc: ["'self'"],
         styleSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https://assets.resonite.com"], // allow thumbnails from Resonite assets
+        imgSrc: ["'self'", "data:", "https://assets.resonite.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         frameAncestors: ["'none'"]

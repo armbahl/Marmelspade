@@ -1,28 +1,177 @@
-body { font-family: system-ui, -apple-system, Segoe UI, Roboto,
-    Arial; max-width: 900px; margin: 24px auto; padding: 0 16px; color:#111; }
+@font-face {
+    font-family: "MyFont";
+    src:
+        url("/fonts/COOL_FONT_HERE") format("FONT_TYPE_HERE");
+    font-weight: 100 1000;
+    font-style: normal;
+    font-display: swap;
+}
 
-.search { display:flex; gap:8px; margin-bottom:16px; }
+body {
+    font-family: "MyFont", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    max-width: 900px;
+    margin: 24px auto;
+    padding: 0 16px;
+    color: #ffffff;
+    background: #000000;
+}
 
-input[type="search"]{ flex:1; padding:10px; font-size:16px; border:1px solid #ccc; border-radius:6px; }
+h1 {
+    font-size: 64px;
+    text-align: center;
+    margin: 0 0 10px 0;
+}
 
-button{ padding:10px 12px; font-size:16px; border-radius:6px; border:1px solid #888; background:#f4f4f4; cursor:pointer; }
+h2 {
+    font-size: 18px;
+    font-weight: normal;
+    text-align: center;
+    margin: 0 0 12px 0;
+}
 
-.hits{ display:grid; gap:12px; margin-top:8px; }
+p {
+    text-align: center;
+    margin: 0 0 0 0;
+}
 
-.hit{ display:flex; gap:12px; align-items:center; padding:10px; border:1px solid #eee; border-radius:6px; background:#fff; }
+a {
+    color: #00ffff;
+    text-decoration: none;
+}
 
-.thumb{ width:256px; height:100px; object-fit:contain; padding: 8px; border-radius:4px; background:#fafafa; border:1px solid #eee; }
+.search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
 
-.meta{ display:flex; flex-direction:column; gap:4px; }
+input[type="search"] {
+    flex: 1;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ff00ff;
+    border-radius: 4px;
+    color: #ffffff;
+    background: #333333;
+}
 
-.name{ font-weight:600; }
+button {
+    padding: 10px 12px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #ff00ff;
+    background: #00ffff;
+    cursor: pointer;
+}
 
-.path{ color:#555; font-size:13px; }
+.hits {
+    display: grid;
+    gap: 12px;
+    margin-top: 8px;
+}
 
-.pagination{ margin-top:16px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.hit {
+    position: relative;
+    font-size: 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #009999;
+    border-radius: 4px;
+    background: #333333;
+}
 
-.page-btn{ padding:6px 8px; border-radius:6px; border:1px solid #ddd; background:#fff; cursor:pointer; }
+.thumb {
+    width: 256px;
+    height: 100px;
+    object-fit: contain;
+    padding: 8px;
+    border-radius: 4px;
+    background: #000000;
+    border: 1px solid #ffffff;
+}
 
-.page-btn[disabled]{ opacity:.5; cursor:default; }
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
 
-.page-info{ margin-left:8px; color:#444; font-size:14px; }
+.name {
+    font-weight: normal;
+}
+
+.path {
+    color: #aaaaaa;
+    font-size: 16px;
+}
+
+.pagination {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 40px;
+    height: 36px;
+    padding: 0 6px;
+    min-width: 40px;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: 4px;
+    border: 1px solid #ff00ff;
+    background: #333333;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.page-btn[disabled] {
+    background: #440044 !important;
+    border: 1px solid #aa00aa;
+    color: #00ffff;
+    cursor: default;
+}
+
+.page-info {
+    margin-left: 8px;
+    color: #bbbbbb;
+    font-size: 14px;
+}
+
+button,
+.hit,
+.page-btn,
+input[type=search],
+select,
+textarea {
+    font-family: "MyFont", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-weight: 400;
+}
+
+.copy-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 8px;
+  font-size: 18px;
+  border-radius: 4px;
+  border: 1px solid #000000;
+  background: #00ffff;
+  color: #000;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+
+.copy-btn[disabled] {
+  opacity: 0.9;
+  cursor: default;
+}
