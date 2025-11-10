@@ -1,9 +1,6 @@
 import fs from 'fs';
 import { MeiliSearch } from 'meilisearch';
-import express from 'express';
-import helmet from 'helmet';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import http from 'http';
 
 // Parse config
 let config;
@@ -20,8 +17,9 @@ catch (err) {
 // Constants
 const CONFIGPATH = "./config.json";
 const HOST = config.serverInfo?.host ?? 'localhost';
-const PORT = Number(config.serverInfo?.port ?? 8080);
+const PORT = 9090;
 const MEILI_PORT = Number(config.serverInfo?.meiliPort ?? 7700);
+const INDEX_NAME = config.serverInfo?.indexName ?? 'awesomeindex';
 const RESO_APIURL = "https://api.resonite.com";
 const RESO_ASSETURL = "https://assets.resonite.com";
 
@@ -40,78 +38,11 @@ catch (err) {
   process.exit(1);
 }
 
-// Express app
-const app = express();
+// Start server
+const server = http.createServer();
 
-// Security and parsing middleware
-app.use(helmet());
-app.use(cors({ origin: '*' }));
-app.use(express.json({ limit: '1mb' }));
-
-// Rate limiter
-const limiter = rateLimit({
-  windowMs: 60_000,
-  max: 128,
-  standardHeaders: true,
-  legacyHeaders: false
-});
-app.use(limiter);
-
-// Serve frontend from local file
-app.get(['/', '/frontend.html'], (req, res) => {
-  try {
-    const html = fs.readFileSync('./main/frontend.html', 'utf-8')
-                   .replace(/__HOST_URL__/g, `http://${HOST}:${PORT}`)
-                   .replace(/__API_KEY__/g, '');
-    res.type('html').send(html);
-  }
-  
-  // Error handling
-  catch (err) {
-    console.error('Frontend serve error:', err.message);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-// Public search endpoint
-app.post('/api/search', async (req, res) => {
-  const payload = req.body || {}; // Request payload
-  const indexName = typeof payload.index === 'string' ? payload.index : 'creatorjam'; // Main index
-  const q = typeof payload.q === 'string' ? payload.q : ''; // Search query
-
-  // Search options
-  const options = (payload.options && typeof payload.options === 'object' && payload.options !== null) ? payload.options : {};
-
-  // Validate options
-  if (Array.isArray(options) || typeof options === 'function') {
-    return res.status(400).send('Invalid search options');
-  }
-
-  // Perform search
-  try {
-    const result = await client.index(indexName).search(q, options);
-    res.json(result);
-  }
-  
-  // Error handling
-  catch (err) {
-    console.error('Search error:', err.message);
-    res.status(502).send('Search backend error');
-  }
-});
-
-// Not found 404
-app.use((req, res) => res.status(404).send('Not Found'));
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Unexpected server error:', err?.message || err);
-  res.status(500).send('Internal Server Error');
-});
-
-// Start Express server
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}/`);
+server.listen(PORT, () => {
+  console.log(`Indexing server active`);
 });
 
 // Create Meilisearch index
@@ -119,14 +50,14 @@ async function mMakeIndex() {
   try {
     // Check if index exists
     try {
-      await client.getIndex('creatorjam');
+      await client.getIndex(INDEX_NAME);
 
       //// DELETE SECTION IF TRYING TO KEEP RECORD IDS
-      /**/ await client.deleteIndex('creatorjam');
-      /**/ const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
+      /**/ await client.deleteIndex(INDEX_NAME);
+      /**/ const res = await client.createIndex(INDEX_NAME, { primaryKey: 'id' });
       /**/ console.log('Created index:', res);
-      /**/ await client.index('creatorjam').updateFilterableAttributes(['recordType', 'tags']);
-      /**/ await client.index('creatorjam').updateSortableAttributes(['name']);
+      /**/ await client.index(INDEX_NAME).updateFilterableAttributes(['recordType', 'tags']);
+      /**/ await client.index(INDEX_NAME).updateSortableAttributes(['name']);
       //// END SECTION
     }
     
@@ -138,10 +69,10 @@ async function mMakeIndex() {
 
       // Create index if not found
       if (notFound) {
-        const res = await client.createIndex('creatorjam', { primaryKey: 'id' });
+        const res = await client.createIndex(INDEX_NAME, { primaryKey: 'id' });
         console.log('Created index:', res);
-        await client.index('creatorjam').updateFilterableAttributes(['recordType', 'tags']);
-        await client.index('creatorjam').updateSortableAttributes(['name']);
+        await client.index(INDEX_NAME).updateFilterableAttributes(['recordType', 'tags']);
+        await client.index(INDEX_NAME).updateSortableAttributes(['name']);
       }
       
       // Error handling
@@ -224,7 +155,7 @@ async function mAddDocs(batches) {
   for (let i = 0; i < batches.length; i++) {
     try {
       const batch = batches[i];
-      let res = await client.index('creatorjam').addDocuments(batch, { primaryKey: 'id' });
+      let res = await client.index(INDEX_NAME).addDocuments(batch, { primaryKey: 'id' });
       console.log(res);
     }
     
@@ -239,7 +170,7 @@ async function mAddDocs(batches) {
 // Remove links and directories from Meilisearch index
 async function mPruneIndex() {
   try {
-    const res = await client.index('creatorjam').deleteDocuments({
+    const res = await client.index(INDEX_NAME).deleteDocuments({
       filter: 'recordType = "link" OR recordType = "directory"'
     });
     console.log(res);
@@ -413,6 +344,7 @@ async function getRequest(url, user, path) {
   try {
     const batches = await inventoryDump(); // Pull inventory data
     await indexData(batches); // Index data in Meilisearch
+    console.log('Indexing completed');
   }
   
   // Error handling
