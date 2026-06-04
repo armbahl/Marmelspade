@@ -1,5 +1,5 @@
 # Marmelspade
-##UPDATE 06/04/2026
+## UPDATE 06/04/2026
 This project no longer pulls the information per changes to the Resonite API. The program itself is still functional, but do not expect to receive results.
 This repo has now been archived.
 
