@@ -1,4 +1,8 @@
 # Marmelspade
+##UPDATE 06/04/2026
+This project no longer pulls the information per changes to the Resonite API. The program itself is still functional, but do not expect to receive results.
+This repo has now been archived.
+
 ### How to use:
 1. Make sure you have [Node.js](https://nodejs.org/en/download) and [Meilisearch](https://www.meilisearch.com/docs/learn/self_hosted/getting_started_with_self_hosted_meilisearch) installed on your machine.
 2. Open "config.json," input the inventory paths you would like to pull from, and set the server info so that it matches your Meilisearch settings.
